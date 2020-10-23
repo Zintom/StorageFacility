@@ -1,0 +1,9 @@
+﻿
+
+1.3*:
+Fixed bug where RAWs would not have a newline after them in the output file.
+Added option for outputOptimizedForReading on the StorageEditor, setting this to true will enable new-lines in the output file.
+
+1.2*:
+Added the RAW data type; used for storing byte arrays(byte[]);
+What sets this Type apart from the others is that it is "Length Prefixed" rather than "Null Terminated", the first of its kind.
