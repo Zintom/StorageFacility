@@ -1,0 +1,216 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>StorageFacility</name>
+    </assembly>
+    <members>
+        <member name="M:Zintom.StorageFacility.Helpers.ReadFile(System.String)">
+            <summary>
+            Reads the given file and returns it as a <see cref="T:System.String"/>.
+            </summary>
+        </member>
+        <member name="M:Zintom.StorageFacility.Helpers.AddOrReplace``2(System.Collections.Generic.Dictionary{``0,``1},``0,``1)">
+            <summary>
+            <inheritdoc cref="M:System.Collections.Generic.Dictionary`2.Add(`0,`1)"/>
+            <para>If the key already exists, it is replaced by the new key and value provided.</para>
+            </summary>
+        </member>
+        <member name="M:Zintom.StorageFacility.Helpers.UnEscapeString(System.String)">
+            <summary>
+            Removes all escape characters from the Double Quote character.
+            </summary>
+        </member>
+        <member name="T:Zintom.StorageFacility.Storage">
+            <summary>
+            A class which simplifies data storage to disk allowing for easy saving, loading and access of a key-value data structure.
+            </summary>
+        </member>
+        <member name="P:Zintom.StorageFacility.Storage.Booleans">
+            <summary>
+            A dictionary of all <see cref="T:System.Boolean"/>'s contained within this <see cref="T:Zintom.StorageFacility.Storage"/>.
+            </summary>
+        </member>
+        <member name="P:Zintom.StorageFacility.Storage.Integers">
+            <summary>
+            A dictionary of all <see cref="T:System.Int32"/>'s contained within this <see cref="T:Zintom.StorageFacility.Storage"/>.
+            </summary>
+        </member>
+        <member name="P:Zintom.StorageFacility.Storage.Longs">
+            <summary>
+            A dictionary of all <see cref="T:System.Int64"/>'s contained within this <see cref="T:Zintom.StorageFacility.Storage"/>.
+            </summary>
+        </member>
+        <member name="P:Zintom.StorageFacility.Storage.Floats">
+            <summary>
+            A dictionary of all <see cref="T:System.Single"/>'s contained within this <see cref="T:Zintom.StorageFacility.Storage"/>.
+            </summary>
+        </member>
+        <member name="P:Zintom.StorageFacility.Storage.Strings">
+            <summary>
+            A dictionary of all <see cref="T:System.String"/>'s contained within this <see cref="T:Zintom.StorageFacility.Storage"/>.
+            </summary>
+        </member>
+        <member name="P:Zintom.StorageFacility.Storage.StringArrays">
+            <summary>
+            A dictionary of all string arrays contained within this <see cref="T:Zintom.StorageFacility.Storage"/>.
+            </summary>
+        </member>
+        <member name="P:Zintom.StorageFacility.Storage.IntegerArrays">
+            <summary>
+            A dictionary of all integer arrays contained within this <see cref="T:Zintom.StorageFacility.Storage"/>.
+            </summary>
+        </member>
+        <member name="P:Zintom.StorageFacility.Storage.LongArrays">
+            <summary>
+            A dictionary of all <see cref="T:System.Int64"/> arrays contained within this <see cref="T:Zintom.StorageFacility.Storage"/>.
+            </summary>
+        </member>
+        <member name="P:Zintom.StorageFacility.Storage.FloatArrays">
+            <summary>
+            A dictionary of all <see cref="T:System.Single"/> arrays contained within this <see cref="T:Zintom.StorageFacility.Storage"/>.
+            </summary>
+        </member>
+        <member name="P:Zintom.StorageFacility.Storage.Raws">
+            <summary>
+            A dictionary of all <see cref="T:System.Byte"/> arrays contained within this <see cref="T:Zintom.StorageFacility.Storage"/>.
+            </summary>
+        </member>
+        <member name="M:Zintom.StorageFacility.Storage.GetStorage(System.String)">
+            <summary>
+            Gets the associated <see cref="T:Zintom.StorageFacility.Storage"/> object for the given <paramref name="filePath"/>.
+            <para>If there is no <see cref="T:Zintom.StorageFacility.Storage"/> for this <paramref name="filePath"/> in the pool, a new <see cref="T:Zintom.StorageFacility.Storage"/>
+            is created and parsed before control is returned, this may be an expensive operation depending on the size of the file.</para>
+            </summary>
+        </member>
+        <member name="M:Zintom.StorageFacility.Storage.Edit(System.Boolean)">
+            <summary>
+            Returns an <see cref="T:Zintom.StorageFacility.IStorageEditor"/> which can be used to modify the values that this storage manages.
+            <para/>
+            You must call <see cref="M:Zintom.StorageFacility.IStorageEditor.Commit"/> to apply the changes to disk.
+            </summary>
+            <param name="outputOptimizedForReading">If true, the editor should try and optimize the output file for reading, using new-lines where appropriate.</param>
+        </member>
+        <member name="F:Zintom.StorageFacility.Storage.StorageEditor.OutputOptimizedForReading">
+            <summary>
+            If true, the editor should try and optimize the output file for reading, using new-lines where appropriate.
+            </summary>
+        </member>
+        <member name="M:Zintom.StorageFacility.Storage.ParseStorageFile">
+            <summary>
+            Loads the given storage file into memory and parses each item into their respective String, Array, Integer etc values.
+            </summary>
+        </member>
+        <member name="M:Zintom.StorageFacility.Storage.DisplayLoadedValues">
+            <summary>
+            Displays all the loaded Storage values in the console log.
+            </summary>
+        </member>
+        <member name="M:Zintom.StorageFacility.Storage.GetTypeFromShortHand(System.String)">
+            <summary>
+            Converts the short-hand representation of a Type to its long-hand version.
+            <para/>
+            For example <c>'L'</c> returns <see cref="T:System.Int64"/> and <c>'B'</c> returns <see cref="T:System.Boolean"/>.
+            </summary>
+        </member>
+        <member name="M:Zintom.StorageFacility.Storage.ChangeType``1(System.Object)">
+            <summary>
+            Changes the <see cref="T:System.Type"/> of the given <see cref="T:System.Object"/> to the given <see cref="T:System.Type"/>.
+            </summary>
+        </member>
+        <member name="M:Zintom.StorageFacility.Storage.CompareSequence(System.Collections.Generic.List{Zintom.StorageFacility.Storage.Token},System.Collections.Generic.List{Zintom.StorageFacility.Storage.Token})">
+            <summary>
+            Compares a sequence of <see cref="T:Zintom.StorageFacility.Storage.Token"/>'s.
+            </summary>
+        </member>
+        <member name="M:Zintom.StorageFacility.Storage.Tokenize(System.String)">
+            <summary>
+            Parses a given input converting to parsable <see cref="T:Zintom.StorageFacility.Storage.Token"/>'s.
+            </summary>
+        </member>
+        <member name="F:Zintom.StorageFacility.Storage.TokenType.String">
+            <summary>
+            Represents an array of characters, i.e "hello".
+            </summary>
+        </member>
+        <member name="F:Zintom.StorageFacility.Storage.TokenType.Seperator">
+            <summary>
+            Represents ','
+            </summary>
+        </member>
+        <member name="F:Zintom.StorageFacility.Storage.TokenType.TypeDeclaration">
+            <summary>
+            Represents the <see cref="T:System.Type"/> stored for an assignment, i.e L(<see cref="T:System.Int64"/>), I(<see cref="T:System.Int32"/>) etc.
+            </summary>
+        </member>
+        <member name="F:Zintom.StorageFacility.Storage.TokenType.SingleValueAssignmentOperator">
+            <summary>
+            Represents ':'
+            </summary>
+        </member>
+        <member name="F:Zintom.StorageFacility.Storage.TokenType.ArrayAssignmentOperator">
+            <summary>
+            Represents '::'
+            </summary>
+        </member>
+        <member name="F:Zintom.StorageFacility.Storage.TokenType.ObjectTerminator">
+            <summary>
+            Represents ';'
+            </summary>
+        </member>
+        <member name="T:Zintom.StorageFacility.IStorageEditor">
+            <summary>
+            Provides an interface to the <see cref="T:Zintom.StorageFacility.Storage.StorageEditor"/>, allowing you to
+            put values into a <see cref="T:Zintom.StorageFacility.Storage"/> and also commit those values to file.
+            </summary>
+        </member>
+        <member name="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.Boolean)">
+            <summary>
+            Puts the given <paramref name="value"/> into <see cref="T:Zintom.StorageFacility.Storage"/> with the given <paramref name="key"/>.
+            </summary>
+            <param name="key">The key to use which identifies this value.</param>
+            <param name="value">The value to be stored.</param>
+        </member>
+        <member name="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.Int32)">
+            <inheritdoc cref="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.Boolean)"/>
+        </member>
+        <member name="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.Int64)">
+            <inheritdoc cref="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.Boolean)"/>
+        </member>
+        <member name="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.Single)">
+            <inheritdoc cref="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.Boolean)"/>
+        </member>
+        <member name="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.String)">
+            <inheritdoc cref="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.Boolean)"/>
+        </member>
+        <member name="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.String[])">
+            <summary>
+            Puts the given <paramref name="values"/> into <see cref="T:Zintom.StorageFacility.Storage"/> with the given <paramref name="key"/>.
+            </summary>
+            <param name="key">The key to use which identifies this value.</param>
+            <param name="values">The value to be stored.</param>
+        </member>
+        <member name="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.Int32[])">
+            <inheritdoc cref="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.String[])"/>
+        </member>
+        <member name="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.Int64[])">
+            <inheritdoc cref="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.String[])"/>
+        </member>
+        <member name="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.Single[])">
+            <inheritdoc cref="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.String[])"/>
+        </member>
+        <member name="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.Byte[])">
+            <inheritdoc cref="M:Zintom.StorageFacility.IStorageEditor.PutValue(System.String,System.String[])"/>
+        </member>
+        <member name="M:Zintom.StorageFacility.IStorageEditor.Commit">
+            <summary>
+            Save the contents of the <see cref="T:Zintom.StorageFacility.Storage"/> to disk.
+            </summary>
+        </member>
+        <member name="M:Zintom.StorageFacility.IStorageEditor.Clear(System.Boolean)">
+            <summary>
+            Wipes all keys/values from this <see cref="T:Zintom.StorageFacility.Storage"/>.
+            <para><c>confirmWipe</c> must be set to <c>true</c> in order for this method to execute, it will return immediately if set to <c>false</c>.</para>
+            </summary>
+        </member>
+    </members>
+</doc>
