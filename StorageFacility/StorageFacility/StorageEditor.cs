@@ -73,7 +73,7 @@ namespace Zintom.StorageFacility
             /// <summary>
             /// If true, the editor should try and optimize the output file for reading, using new-lines where appropriate.
             /// </summary>
-            readonly bool OutputOptimizedForReading = false;
+            readonly bool OutputOptimizedForReading;
 
             internal StorageEditor(Storage parent, bool outputOptimizedForReading)
             {
@@ -150,57 +150,55 @@ namespace Zintom.StorageFacility
             {
                 // Save all Storage contents to file.
                 using (var file = File.Create(Parent.StoragePath))
+                using (StreamWriter writer = new StreamWriter(file, Encoding.UTF8))
                 {
-                    using (StreamWriter writer = new StreamWriter(file, Encoding.UTF8))
+                    // Write single value objects to file:
+                    WriteKeyPairValues(Parent.strings, null);
+                    WriteKeyPairValues(Parent.booleans, 'B');
+                    WriteKeyPairValues(Parent.integers, 'I');
+                    WriteKeyPairValues(Parent.longs, 'L');
+                    WriteKeyPairValues(Parent.floats, 'F');
+
+                    void WriteKeyPairValues<TValue>(Dictionary<string, TValue> keyValuePairs, char? typeShortHand)
                     {
-                        // Write single value objects to file:
-                        WriteKeyPairValues(Parent.strings, null);
-                        WriteKeyPairValues(Parent.booleans, 'B');
-                        WriteKeyPairValues(Parent.integers, 'I');
-                        WriteKeyPairValues(Parent.longs, 'L');
-                        WriteKeyPairValues(Parent.floats, 'F');
-
-                        void WriteKeyPairValues<TValue>(Dictionary<string, TValue> keyValuePairs, char? typeShortHand)
+                        foreach (var key in keyValuePairs.Keys)
                         {
-                            foreach (var key in keyValuePairs.Keys)
+                            writer.Write("\"" + key + "\"" + ":" + typeShortHand + "\"" + keyValuePairs[key] + "\";" + (OutputOptimizedForReading ? "\n" : ""));
+                        }
+                    }
+
+                    // Write all Arrays to file.
+                    WriteArray(Parent.stringArrays, null);
+                    WriteArray(Parent.integerArrays, 'I');
+                    WriteArray(Parent.longArrays, 'L');
+                    WriteArray(Parent.floatArrays, 'F');
+
+                    void WriteArray<TValue>(Dictionary<string, TValue[]> keyValuePairs, char? typeShortHand)
+                    {
+                        foreach (var arrayName in keyValuePairs.Keys)
+                        {
+                            StringBuilder arrayBuilder = new StringBuilder();
+                            arrayBuilder.Append("\"" + arrayName + "\"" + "::" + typeShortHand);
+                            foreach (var value in keyValuePairs[arrayName])
                             {
-                                writer.Write("\"" + key + "\"" + ":" + typeShortHand + "\"" + keyValuePairs[key] + "\";" + (OutputOptimizedForReading ? "\n" : ""));
+                                arrayBuilder.Append("\"" + value + "\",");
                             }
+
+                            // Overwrite the final 'seperator' at the end of the array builder.
+                            arrayBuilder.Remove(arrayBuilder.Length - 1, 1);
+                            // Append object terminator
+                            arrayBuilder.Append(";" + (OutputOptimizedForReading ? "\n" : ""));
+                            // Write to file.
+                            writer.Write(arrayBuilder.ToString());
                         }
+                    }
 
-                        // Write all Arrays to file.
-                        WriteArray(Parent.stringArrays, null);
-                        WriteArray(Parent.integerArrays, 'I');
-                        WriteArray(Parent.longArrays, 'L');
-                        WriteArray(Parent.floatArrays, 'F');
+                    // Write raws
+                    foreach (var name in Parent.raws.Keys)
+                    {
+                        string value = Convert.ToBase64String(Parent.raws[name]);
 
-                        void WriteArray<TValue>(Dictionary<string, TValue[]> keyValuePairs, char? typeShortHand)
-                        {
-                            foreach (var arrayName in keyValuePairs.Keys)
-                            {
-                                StringBuilder arrayBuilder = new StringBuilder();
-                                arrayBuilder.Append("\"" + arrayName + "\"" + "::" + typeShortHand);
-                                foreach (var value in keyValuePairs[arrayName])
-                                {
-                                    arrayBuilder.Append("\"" + value + "\",");
-                                }
-
-                                // Overwrite the final 'seperator' at the end of the array builder.
-                                arrayBuilder.Remove(arrayBuilder.Length - 1, 1);
-                                // Append object terminator
-                                arrayBuilder.Append(";" + (OutputOptimizedForReading ? "\n" : ""));
-                                // Write to file.
-                                writer.Write(arrayBuilder.ToString());
-                            }
-                        }
-
-                        // Write raws
-                        foreach (var name in Parent.raws.Keys)
-                        {
-                            string value = Convert.ToBase64String(Parent.raws[name]);
-
-                            writer.Write("\"" + name + "\"" + "::" + "RAW<" + Convert.ToString(value.Length, 16) + ">\"" + value + "\";" + (OutputOptimizedForReading ? "\n" : ""));
-                        }
+                        writer.Write("\"" + name + "\"" + "::" + "RAW<" + Convert.ToString(value.Length, 16) + ">\"" + value + "\";" + (OutputOptimizedForReading ? "\n" : ""));
                     }
                 }
                 return this;
