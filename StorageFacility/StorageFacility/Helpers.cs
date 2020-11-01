@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 
@@ -8,33 +9,10 @@ namespace Zintom.StorageFacility
     {
 
         /// <summary>
-        /// Reads the given file and returns it as a <see cref="string"/>.
-        /// </summary>
-        internal static string ReadFile(string filePath)
-        {
-            StreamReader streamReader = null;
-            string fileContents = "";
-            try
-            {
-                streamReader = new StreamReader(filePath);
-                fileContents = streamReader.ReadToEnd();
-            }
-            catch (FileNotFoundException) { }
-            catch (DirectoryNotFoundException) { }
-            finally
-            {
-                streamReader?.Close();
-                streamReader?.Dispose();
-            }
-
-            return fileContents;
-        }
-
-        /// <summary>
         /// <inheritdoc cref="Dictionary{TKey, TValue}.Add(TKey, TValue)"/>
         /// <para>If the key already exists, it is replaced by the new key and value provided.</para>
         /// </summary>
-        internal static void AddOrReplace<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value)
+        internal static void AddOrReplace<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value) where TKey : notnull
         {
             if (dictionary.ContainsKey(key))
                 dictionary.Remove(key);
