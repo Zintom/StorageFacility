@@ -16,6 +16,8 @@ Attempts to mimic the functionality and syntax of Androids SharedPreferences.</D
     <RepositoryUrl>https://github.com/Zintom/StorageFacility</RepositoryUrl>
     <PackageTags>Data Storage, Settings Storage</PackageTags>
     <NeutralLanguage>en</NeutralLanguage>
+    <PackageLicenseExpression></PackageLicenseExpression>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -27,6 +29,13 @@ Attempts to mimic the functionality and syntax of Androids SharedPreferences.</D
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
