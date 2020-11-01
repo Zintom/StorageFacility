@@ -9,6 +9,7 @@
     <Company>Zintom</Company>
     <Authors>Thomas Zsinko</Authors>
     <Copyright>Copyright © Zintom 2020</Copyright>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
