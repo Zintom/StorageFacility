@@ -14,7 +14,7 @@ Attempts to mimic the functionality and syntax of Androids SharedPreferences.</D
     <Nullable>enable</Nullable>
     <PackageProjectUrl>https://github.com/Zintom/StorageFacility</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Zintom/StorageFacility</RepositoryUrl>
-    <PackageTags>Data Storage, Settings Storage</PackageTags>
+    <PackageTags>Data Storage Settings</PackageTags>
     <NeutralLanguage>en</NeutralLanguage>
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
