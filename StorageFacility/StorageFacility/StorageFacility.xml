@@ -4,11 +4,6 @@
         <name>StorageFacility</name>
     </assembly>
     <members>
-        <member name="M:Zintom.StorageFacility.Helpers.ReadFile(System.String)">
-            <summary>
-            Reads the given file and returns it as a <see cref="T:System.String"/>.
-            </summary>
-        </member>
         <member name="M:Zintom.StorageFacility.Helpers.AddOrReplace``2(System.Collections.Generic.Dictionary{``0,``1},``0,``1)">
             <summary>
             <inheritdoc cref="M:System.Collections.Generic.Dictionary`2.Add(`0,`1)"/>
@@ -115,11 +110,6 @@
         <member name="M:Zintom.StorageFacility.Storage.ChangeType``1(System.Object)">
             <summary>
             Changes the <see cref="T:System.Type"/> of the given <see cref="T:System.Object"/> to the given <see cref="T:System.Type"/>.
-            </summary>
-        </member>
-        <member name="M:Zintom.StorageFacility.Storage.CompareSequence(System.Collections.Generic.List{Zintom.StorageFacility.Storage.Token},System.Collections.Generic.List{Zintom.StorageFacility.Storage.Token})">
-            <summary>
-            Compares a sequence of <see cref="T:Zintom.StorageFacility.Storage.Token"/>'s.
             </summary>
         </member>
         <member name="M:Zintom.StorageFacility.Storage.Tokenize(System.String)">
