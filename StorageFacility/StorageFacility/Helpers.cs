@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace Zintom.Misc
+namespace Zintom.StorageFacility
 {
     internal static class Helpers
     {

@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using static Zintom.Misc.Helpers;
+using static Zintom.StorageFacility.Helpers;
 
-namespace Zintom.IO.StorageFacility
+namespace Zintom.StorageFacility
 {
     /// <summary>
     /// Provides an interface to the <see cref="Storage.StorageEditor"/>, allowing you to

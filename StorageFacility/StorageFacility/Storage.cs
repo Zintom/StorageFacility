@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.IO;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading;
 
-namespace Zintom.IO.StorageFacility
+namespace Zintom.StorageFacility
 {
     /// <summary>
     /// A class which simplifies data storage to disk allowing for easy saving, loading and access of a key-value data structure.

@@ -3,12 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using Zintom.Misc;
 
-namespace Zintom.IO.StorageFacility
+namespace Zintom.StorageFacility
 {
     public partial class Storage
     {
@@ -66,7 +63,7 @@ namespace Zintom.IO.StorageFacility
                     if (keyPair != null)
                     {
                         // If the object is string, ensure it gets unescaped.
-                        if(typeof(T) == typeof(string))
+                        if (typeof(T) == typeof(string))
                             targetDictionary.Add(keyPair.Value.Key, ChangeType<T>(Helpers.UnEscapeString(ChangeType<string>(keyPair.Value.Value))));
                         else
                             targetDictionary.Add(keyPair.Value.Key, keyPair.Value.Value);
