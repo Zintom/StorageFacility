@@ -12,7 +12,7 @@ namespace Zintom.StorageFacility
         private string StoragePath = "";
 
         private readonly object editor_locker = new object();
-        private IStorageEditor editor = null;
+        private IStorageEditor? editor;
 
         private readonly static object storagePool_locker = new object();
         private readonly static List<Storage> storagePool = new List<Storage>();

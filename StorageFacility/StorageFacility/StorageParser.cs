@@ -15,7 +15,8 @@ namespace Zintom.StorageFacility
         /// </summary>
         private void ParseStorageFile()
         {
-            string fileContents = Helpers.ReadFile(StoragePath);
+            //string fileContents = Helpers.ReadFile(StoragePath);
+            string fileContents = File.ReadAllText(StoragePath);
             if (string.IsNullOrEmpty(fileContents))
             {
                 Debug.WriteLine("Storage: Given storage file does not exist or is empty.");
@@ -58,9 +59,10 @@ namespace Zintom.StorageFacility
                 else if (AddToDictionaryIfKeyPairNotNull(floatArrays, MatchDefineArray<float>(sequenceBuilder))) continue;
 
                 bool AddToDictionaryIfKeyPairNotNull<T>(Dictionary<string, T> targetDictionary,
-                                           KeyValuePair<string, T>? keyPair)
+                                           KeyValuePair<string, T>? keyPair) where T : notnull
                 {
-                    if (keyPair != null)
+                    if (keyPair != null
+                        && keyPair.HasValue)
                     {
                         // If the object is string, ensure it gets unescaped.
                         if (typeof(T) == typeof(string))
@@ -125,7 +127,7 @@ namespace Zintom.StorageFacility
             Debug.WriteLine($"Float arrays:");
             DisplayArray(floatArrays);
 
-            void DisplayDictionary<TKey, TValue>(Dictionary<TKey, TValue> pairs)
+            static void DisplayDictionary<TKey, TValue>(Dictionary<TKey, TValue> pairs) where TKey : notnull
             {
                 foreach (var key in pairs.Keys)
                 {
@@ -133,7 +135,7 @@ namespace Zintom.StorageFacility
                 }
             }
 
-            void DisplayArray<TValue>(Dictionary<string, TValue[]> keyValuePairs)
+            static void DisplayArray<TValue>(Dictionary<string, TValue[]> keyValuePairs)
             {
                 foreach (var key in keyValuePairs.Keys)
                 {
@@ -291,25 +293,6 @@ namespace Zintom.StorageFacility
         }
 
         /// <summary>
-        /// Compares a sequence of <see cref="Token"/>'s.
-        /// </summary>
-        [Obsolete]
-        private static bool CompareSequence(List<Token> seq1, List<Token> seq2)
-        {
-            if (seq1.Count != seq2.Count)
-                return false;
-
-            for (int i = 0; i < seq1.Count; i++)
-            {
-                // If sequence members do not match, return.
-                if (seq1[i].TType != seq2[i].TType)
-                    return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
         /// Parses a given input converting to parsable <see cref="Token"/>'s.
         /// </summary>
         private static Token[] Tokenize(string input)
@@ -336,26 +319,26 @@ namespace Zintom.StorageFacility
                     // Array item seperator
                     else if (chars[c] == ',')
                     {
-                        tokens.Add(new Token(TokenType.Seperator, null));
+                        tokens.Add(new Token(TokenType.Seperator, ""));
                         continue;
                     }
                     // End of Object
                     else if (chars[c] == ';')
                     {
-                        tokens.Add(new Token(TokenType.ObjectTerminator, null));
+                        tokens.Add(new Token(TokenType.ObjectTerminator, ""));
                         continue;
                     }
                     // Assign Array
                     else if (chars[c] == ':' && (c + 1 < chars.Length) && chars[c + 1] == ':')
                     {
-                        tokens.Add(new Token(TokenType.ArrayAssignmentOperator, null));
+                        tokens.Add(new Token(TokenType.ArrayAssignmentOperator, ""));
                         c++;
                         continue;
                     }
                     // Assign Single Value
                     else if (chars[c] == ':')
                     {
-                        tokens.Add(new Token(TokenType.SingleValueAssignmentOperator, null));
+                        tokens.Add(new Token(TokenType.SingleValueAssignmentOperator, ""));
                         continue;
                     }
                     // Type Declaration
@@ -382,7 +365,7 @@ namespace Zintom.StorageFacility
                     }
                     else
                     {
-                        throw new Exception($"Tokenizer: Did not expect '{chars[c]}' at position {c + 1}");
+                        throw new InvalidDataException($"Tokenizer: Did not expect '{chars[c]}' at position {c + 1}");
                     }
                 }
                 else if (state == TokenizerState.BuildingString)
@@ -431,9 +414,9 @@ namespace Zintom.StorageFacility
             }
 
             if (state == TokenizerState.BuildingString)
-                throw new Exception("String literal was declared however does not close before the end of file.");
+                throw new FormatException("String literal was declared however does not close before the end of file.");
             if (state == TokenizerState.BuildingByteString)
-                throw new Exception("RAW was declared however the file ends before the length-prefix finishes.");
+                throw new FormatException("RAW was declared however the file ends before the length-prefix finishes.");
 
             return tokens.ToArray();
         }
