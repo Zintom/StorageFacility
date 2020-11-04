@@ -15,6 +15,15 @@
             Removes all escape characters from the Double Quote character.
             </summary>
         </member>
+        <member name="M:Zintom.StorageFacility.Helpers.ExpectedCharIsAtIndex(System.Char[],System.Char,System.Int32)">
+            <summary>
+            Checks that the given <paramref name="expectedCharacter"/> is equal to to the character at the specified <paramref name="index"/>.
+            </summary>
+            <param name="array"></param>
+            <param name="expectedCharacter"></param>
+            <param name="index"></param>
+            <returns></returns>
+        </member>
         <member name="T:Zintom.StorageFacility.Storage">
             <summary>
             A class which simplifies data storage to disk allowing for easy saving, loading and access of a key-value data structure.
@@ -88,6 +97,11 @@
         <member name="F:Zintom.StorageFacility.Storage.StorageEditor.OutputOptimizedForReading">
             <summary>
             If true, the editor should try and optimize the output file for reading, using new-lines where appropriate.
+            </summary>
+        </member>
+        <member name="M:Zintom.StorageFacility.Storage.GetStorageFileContents(System.String)">
+            <summary>
+            Gets the string contents of the given storage file.
             </summary>
         </member>
         <member name="M:Zintom.StorageFacility.Storage.ParseStorageFile">

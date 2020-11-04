@@ -64,5 +64,18 @@ namespace Zintom.StorageFacility
             return unescaped.ToString();
         }
 
+
+        /// <summary>
+        /// Checks that the array contains the specified <paramref name="expectedCharacter"/> at the given <paramref name="index"/>.
+        /// </summary>
+        /// <param name="array"></param>
+        /// <param name="expectedCharacter"></param>
+        /// <param name="index"></param>
+        /// <returns><b>true</b> if the given <paramref name="expectedCharacter"/> exists at the given <paramref name="index"/>, or if not, returns <b>false</b>.</returns>
+        internal static bool ContainsAt(this char[] array, char expectedCharacter, int index)
+        {
+            return index > 0 && index < array.Length && array[index] == expectedCharacter;
+        }
+
     }
 }

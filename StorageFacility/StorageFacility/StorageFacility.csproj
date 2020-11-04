@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>Zintom.StorageFacility</RootNamespace>
-    <Version>1.3.1</Version>
-    <AssemblyVersion>1.3.1.0</AssemblyVersion>
+    <Version>1.3.2</Version>
+    <AssemblyVersion>1.3.2.0</AssemblyVersion>
     <Description>An API which simplifies data storage to disk allowing for easy saving, loading and access of a key-value data structure.
 
 Attempts to mimic the functionality and syntax of Androids SharedPreferences.</Description>
@@ -14,7 +14,7 @@ Attempts to mimic the functionality and syntax of Androids SharedPreferences.</D
     <Nullable>enable</Nullable>
     <PackageProjectUrl>https://github.com/Zintom/StorageFacility</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Zintom/StorageFacility</RepositoryUrl>
-    <PackageTags>Data Storage Settings</PackageTags>
+    <PackageTags>Data Storage Settings SharedPreferences Preferences</PackageTags>
     <NeutralLanguage>en</NeutralLanguage>
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>

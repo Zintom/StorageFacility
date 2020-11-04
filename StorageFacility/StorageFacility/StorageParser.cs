@@ -11,17 +11,51 @@ namespace Zintom.StorageFacility
     {
 
         /// <summary>
+        /// Gets the string contents of the given storage file.
+        /// </summary>
+        private static string GetStorageFileContents(string path)
+        {
+            try
+            {
+                string fileContents = File.ReadAllText(path);
+                if (string.IsNullOrEmpty(fileContents))
+                {
+                    Debug.WriteLine("StorageFacility.Storage: The given storage file is empty.");
+                    return "";
+                }
+                else
+                {
+                    return fileContents;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (ex is FileNotFoundException)
+                {
+                    Debug.WriteLine("StorageFacility.Storage: The given storage file does not exist, creating now.");
+
+                    File.Create(path).Dispose();
+                    return "";
+                }
+                else if (ex is DirectoryNotFoundException ||
+                         ex is PathTooLongException ||
+                         ex is UnauthorizedAccessException)
+                {
+                    Debug.WriteLine("StorageFacility.Storage: The given path to the storage file is incorrect or inaccessible.");
+
+                    return "";
+                }
+
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Loads the given storage file into memory and parses each item into their respective String, Array, Integer etc values.
         /// </summary>
         private void ParseStorageFile()
         {
-            //string fileContents = Helpers.ReadFile(StoragePath);
-            string fileContents = File.ReadAllText(StoragePath);
-            if (string.IsNullOrEmpty(fileContents))
-            {
-                Debug.WriteLine("Storage: Given storage file does not exist or is empty.");
-                return;
-            }
+            string fileContents = GetStorageFileContents(StoragePath);
 
             Token[] tokens = Tokenize(fileContents);
 
@@ -155,6 +189,79 @@ namespace Zintom.StorageFacility
             }
 
         }
+
+        ///// <summary>
+        ///// Displays all the loaded Storage values in the console log.
+        ///// </summary>
+        //public IEnumerable<(Type type, string value)> DumpLoadedValues()
+        //{
+        //    Debug.WriteLine($"▼ Storage Loaded(\"{StoragePath}\") ▼");
+
+        //    Debug.WriteLine($"Strings:");
+        //    foreach (var output in DisplayDictionary(strings)) yield return output;
+
+        //    Debug.WriteLine($"Booleans:");
+        //    DisplayDictionary(booleans);
+
+        //    Debug.WriteLine($"Integers:");
+        //    DisplayDictionary(integers);
+
+        //    Debug.WriteLine($"Longs:");
+        //    DisplayDictionary(longs);
+
+        //    Debug.WriteLine($"Floating Point Numbers:");
+        //    DisplayDictionary(floats);
+
+        //    Debug.WriteLine($"Raws (encoded in Base64 for brevity):");
+        //    foreach (var key in raws.Keys)
+        //    {
+        //        if (raws[key].Length < 2048)
+        //            Debug.WriteLine(" '" + key + "' => '" + Convert.ToBase64String(raws[key]) + "'");
+        //        else
+        //            Debug.WriteLine(" '" + key + "' => Value size exceeds safe display limit(" + raws[key].Length + ")!");
+        //    }
+
+        //    Debug.WriteLine($"String arrays:");
+        //    DisplayArray(stringArrays);
+
+        //    Debug.WriteLine($"Integer arrays:");
+        //    DisplayArray(integerArrays);
+
+        //    Debug.WriteLine($"Long arrays:");
+        //    DisplayArray(longArrays);
+
+        //    Debug.WriteLine($"Float arrays:");
+        //    DisplayArray(floatArrays);
+
+        //    static IEnumerable<(Type, string)> DisplayDictionary<TKey, TValue>(Dictionary<TKey, TValue> pairs) where TKey : notnull
+        //    {
+        //        foreach (var key in pairs.Keys)
+        //        {
+        //            yield return (key.GetType(), pairs[key]!.ToString() ?? "");
+        //            //Debug.WriteLine(" '" + key + "' => '" + pairs[key] + "'");
+        //        }
+        //    }
+
+        //    static void DisplayArray<TValue>(Dictionary<string, TValue[]> keyValuePairs)
+        //    {
+        //        foreach (var key in keyValuePairs.Keys)
+        //        {
+        //            Debug.Write(" '" + key + "' => { ");
+
+        //            bool firstValue = true;
+        //            foreach (var value in keyValuePairs[key])
+        //            {
+        //                if (!firstValue) Debug.Write(", ");
+        //                firstValue = false;
+
+        //                Debug.Write("'" + value + "'");
+        //            }
+
+        //            Debug.WriteLine(" }");
+        //        }
+        //    }
+
+        //}
 
         static KeyValuePair<string, string>? MatchDefineAssumeStringAssignment(List<Token> tokens)
         {
@@ -329,7 +436,7 @@ namespace Zintom.StorageFacility
                         continue;
                     }
                     // Assign Array
-                    else if (chars[c] == ':' && (c + 1 < chars.Length) && chars[c + 1] == ':')
+                    else if (chars[c] == ':' && chars.ContainsAt(':', c + 1))//&& (c + 1 < chars.Length) && chars[c + 1] == ':')
                     {
                         tokens.Add(new Token(TokenType.ArrayAssignmentOperator, ""));
                         c++;
@@ -342,7 +449,9 @@ namespace Zintom.StorageFacility
                         continue;
                     }
                     // Type Declaration
-                    else if (chars[c] == 'R' && c < chars.Length - 2 && chars[c + 1] == 'A' && chars[c + 2] == 'W')
+                    else if (chars[c] == 'R'
+                        && chars.ContainsAt('A', c + 1) 
+                        && chars.ContainsAt('W', c + 2))//c < chars.Length - 2 && chars[c + 1] == 'A' && chars[c + 2] == 'W')
                     {
                         tokens.Add(new Token(TokenType.TypeDeclaration, "RAW"));
                         state = TokenizerState.BuildingByteString;
@@ -371,7 +480,7 @@ namespace Zintom.StorageFacility
                 else if (state == TokenizerState.BuildingString)
                 {
                     // If end quote detected
-                    if (chars[c] == '"' && chars[c - 1] != '\\')
+                    if (chars[c] == '"' && !chars.ContainsAt('\\', c - 1))//chars[c - 1] != '\\')
                     {
                         // Add the built string to the token list.
                         tokens.Add(new Token(TokenType.String, valueBuilder.ToString()));
