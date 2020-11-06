@@ -15,14 +15,14 @@
             Removes all escape characters from the Double Quote character.
             </summary>
         </member>
-        <member name="M:Zintom.StorageFacility.Helpers.ExpectedCharIsAtIndex(System.Char[],System.Char,System.Int32)">
+        <member name="M:Zintom.StorageFacility.Helpers.ContainsAt(System.Char[],System.Char,System.Int32)">
             <summary>
-            Checks that the given <paramref name="expectedCharacter"/> is equal to to the character at the specified <paramref name="index"/>.
+            Checks that the array contains the specified <paramref name="expectedCharacter"/> at the given <paramref name="index"/>.
             </summary>
             <param name="array"></param>
             <param name="expectedCharacter"></param>
             <param name="index"></param>
-            <returns></returns>
+            <returns><b>true</b> if the given <paramref name="expectedCharacter"/> exists at the given <paramref name="index"/>, or if not, returns <b>false</b>.</returns>
         </member>
         <member name="T:Zintom.StorageFacility.Storage">
             <summary>
