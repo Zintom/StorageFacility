@@ -18,6 +18,7 @@ Attempts to mimic the functionality and syntax of Androids SharedPreferences.</D
     <NeutralLanguage>en</NeutralLanguage>
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReleaseNotes>Fixes a critical bug which would cause a crash when a storage file did not exist and the caller tried to load it, now the Storage correctly creates the file if it does not exist.</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -36,6 +37,7 @@ Attempts to mimic the functionality and syntax of Androids SharedPreferences.</D
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
   </ItemGroup>
 
 </Project>
