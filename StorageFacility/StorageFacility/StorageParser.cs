@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
 namespace Zintom.StorageFacility
@@ -267,13 +268,13 @@ namespace Zintom.StorageFacility
         {
             if (tokens.Count != 4) return null;
             if (tokens[0].TType != TokenType.String) return null;
-            if (tokens[1].TType != TokenType.SingleValueAssignmentOperator) return null;
+            if (tokens[1].TType != TokenType.AssignmentOperator) return null;
             if (tokens[2].TType != TokenType.String) return null;
 
             // Sequence infers String, so add the String Type Declaration token to the list of tokens and use the Generic method.
             tokens.Insert(2, new Token(TokenType.TypeDeclaration, "S"));
 
-            Debug.WriteLine("StorageParser: No type was given for object '" + tokens[0].Value + "', so its value '" + tokens[3].Value + "' was assumed to be a String.");
+            Debug.WriteLine("StorageParser: No type was given for object '" + tokens[0].TValue + "', so its value '" + tokens[3].TValue + "' was assumed to be a String.");
 
             return MatchDefineSingleValueAssignment<string>(tokens);
         }
@@ -288,7 +289,7 @@ namespace Zintom.StorageFacility
             // Sequence infers String, so add the String Type Declaration token to the list of tokens and use the Generic method.
             tokens.Insert(2, new Token(TokenType.TypeDeclaration, "S"));
 
-            Debug.WriteLine("StorageParser: No type was given for array '" + tokens[0].Value + "', so it was assumed to be a StringArray.");
+            Debug.WriteLine("StorageParser: No type was given for array '" + tokens[0].TValue + "', so it was assumed to be a StringArray.");
 
             return MatchDefineArray<string>(tokens);
         }
@@ -300,27 +301,27 @@ namespace Zintom.StorageFacility
             if (tokens[1].TType != TokenType.ArrayAssignmentOperator) return null;
 
             if (tokens[2].TType != TokenType.TypeDeclaration) return null;
-            if (GetTypeFromShortHand(tokens[2].Value) != typeof(byte[])) return null;
+            if (GetTypeFromShortHand(tokens[2].TValue) != typeof(byte[])) return null;
 
             if (tokens[3].TType != TokenType.String) return null;
             if (tokens[4].TType != TokenType.ObjectTerminator) return null;
 
-            return new KeyValuePair<string, byte[]>(tokens[0].Value, Convert.FromBase64String(tokens[3].Value));
+            return new KeyValuePair<string, byte[]>(tokens[0].TValue, Convert.FromBase64String(tokens[3].TValue));
         }
 
         static KeyValuePair<string, T>? MatchDefineSingleValueAssignment<T>(List<Token> tokens)
         {
             if (tokens.Count != 5) return null;
             if (tokens[0].TType != TokenType.String) return null;
-            if (tokens[1].TType != TokenType.SingleValueAssignmentOperator) return null;
+            if (tokens[1].TType != TokenType.AssignmentOperator) return null;
 
             if (tokens[2].TType != TokenType.TypeDeclaration) return null;
-            if (GetTypeFromShortHand(tokens[2].Value) != typeof(T)) return null;
+            if (GetTypeFromShortHand(tokens[2].TValue) != typeof(T)) return null;
 
             if (tokens[3].TType != TokenType.String) return null;
             if (tokens[4].TType != TokenType.ObjectTerminator) return null;
 
-            return new KeyValuePair<string, T>(tokens[0].Value, ChangeType<T>(tokens[3].Value));
+            return new KeyValuePair<string, T>(tokens[0].TValue, ChangeType<T>(tokens[3].TValue));
             //return new KeyValuePair<string, T>(tokens[0].Value, (T)Convert.ChangeType(tokens[3].Value, typeof(T), CultureInfo.InvariantCulture));
         }
 
@@ -331,10 +332,10 @@ namespace Zintom.StorageFacility
             if (tokens[1].TType != TokenType.ArrayAssignmentOperator) return null;
 
             if (tokens[2].TType != TokenType.TypeDeclaration) return null;
-            if (GetTypeFromShortHand(tokens[2].Value) != typeof(T)) return null;
+            if (GetTypeFromShortHand(tokens[2].TValue) != typeof(T)) return null;
 
             List<T> arrayObjects = new List<T>();
-            arrayObjects.Add(ChangeType<T>(tokens[3].Value)); // Add first value
+            arrayObjects.Add(ChangeType<T>(tokens[3].TValue)); // Add first value
 
             for (int i = 3; i < tokens.Count; i++)
             {
@@ -345,7 +346,7 @@ namespace Zintom.StorageFacility
                 {
                     if (currentToken.TType == TokenType.String)
                     {
-                        arrayObjects.Add(ChangeType<T>(currentToken.Value));
+                        arrayObjects.Add(ChangeType<T>(currentToken.TValue));
                     }
                     else
                     {
@@ -358,7 +359,7 @@ namespace Zintom.StorageFacility
                 {
                     if (currentToken.TType == TokenType.ObjectTerminator)
                     {
-                        return new KeyValuePair<string, T[]>(tokens[0].Value, arrayObjects.ToArray());
+                        return new KeyValuePair<string, T[]>(tokens[0].TValue, arrayObjects.ToArray());
                     }
                     else if (currentToken.TType != TokenType.Seperator)
                     {
@@ -411,70 +412,87 @@ namespace Zintom.StorageFacility
             var state = TokenizerState.None;
             var valueBuilder = new StringBuilder();
 
+            Token? previousMatchedToken = new Token?();
+            var tokenValueBuilder = new StringBuilder();
+
             // Loop through all characters
             for (int c = 0; c < chars.Length; c++)
             {
                 if (state == TokenizerState.None)
                 {
-                    // Start string definition
-                    if (chars[c] == '"')
+                    if (chars[c] == '\r' || chars[c] == '\n' || chars[c] == ' ')
+                        continue;
+
+                    Token? matchedToken = new Token?();
+                    bool partialMatch = false;
+
+                    // Add the current char to the token value to be checked.
+                    tokenValueBuilder.Append(chars[c]);
+                    string tokenValue = tokenValueBuilder.ToString();
+
+                    MatchToken(TokenType.Seperator, TokenStrings.Seperator);
+                    MatchToken(TokenType.ObjectTerminator, TokenStrings.ObjectTerminator);
+                    MatchToken(TokenType.ArrayAssignmentOperator, TokenStrings.ArrayAssignmentOperator);
+                    MatchToken(TokenType.AssignmentOperator, TokenStrings.AssignmentOperator);
+
+                    MatchToken(TokenType.TypeDeclaration, "S");
+                    MatchToken(TokenType.TypeDeclaration, "B");
+                    MatchToken(TokenType.TypeDeclaration, "I");
+                    MatchToken(TokenType.TypeDeclaration, "L");
+                    MatchToken(TokenType.TypeDeclaration, "F");
+                    MatchToken(TokenType.TypeDeclaration, "RAW");
+
+                    MatchToken(TokenType.String, TokenStrings.StringEnclosure);
+
+                    // If we have a partial or full match then test next character
+                    // to see if this remains true.
+                    if (partialMatch || matchedToken.HasValue)
+                    {
+                        previousMatchedToken = matchedToken;
+                        continue;
+                    }
+
+                    // Move back one character as this will need to be evaluated again
+                    // as it was the last character to not match anything.
+                    c--;
+                    tokenValueBuilder.Clear();
+
+                    // At this point, previousMatchedToken is actually the token we add to the tokens list
+                    // as we now have no partial matches left and no full matches(matchedToken) left.
+
+                    if (!previousMatchedToken.HasValue) throw new InvalidTokenException($"The token '{tokenValue[0..^1]}' is not valid.");
+
+                    if (previousMatchedToken.Value.TType == TokenType.String)
                     {
                         state = TokenizerState.BuildingString;
                         valueBuilder.Clear();
                         continue;
                     }
-                    // Array item seperator
-                    else if (chars[c] == ',')
-                    {
-                        tokens.Add(new Token(TokenType.Seperator, ""));
-                        continue;
-                    }
-                    // End of Object
-                    else if (chars[c] == ';')
-                    {
-                        tokens.Add(new Token(TokenType.ObjectTerminator, ""));
-                        continue;
-                    }
-                    // Assign Array
-                    else if (chars[c] == ':' && chars.ContainsAt(':', c + 1))//&& (c + 1 < chars.Length) && chars[c + 1] == ':')
-                    {
-                        tokens.Add(new Token(TokenType.ArrayAssignmentOperator, ""));
-                        c++;
-                        continue;
-                    }
-                    // Assign Single Value
-                    else if (chars[c] == ':')
-                    {
-                        tokens.Add(new Token(TokenType.SingleValueAssignmentOperator, ""));
-                        continue;
-                    }
-                    // Type Declaration
-                    else if (chars[c] == 'R'
-                        && chars.ContainsAt('A', c + 1) 
-                        && chars.ContainsAt('W', c + 2))//c < chars.Length - 2 && chars[c + 1] == 'A' && chars[c + 2] == 'W')
+                    else if (previousMatchedToken.Value.TValue == "RAW")
                     {
                         tokens.Add(new Token(TokenType.TypeDeclaration, "RAW"));
+
                         state = TokenizerState.BuildingByteString;
                         valueBuilder.Clear();
+                        continue;
+                    }
 
-                        // Increment past the two 'A' and 'W' characters.
-                        c += 2;
+                    tokens.Add((Token)previousMatchedToken);
 
-                        continue;
-                    }
-                    else if (chars[c] == 'S' || chars[c] == 'B' || chars[c] == 'I' || chars[c] == 'L' || chars[c] == 'F')
+                    void MatchToken(TokenType targetTokenType, string targetTokenString)
                     {
-                        tokens.Add(new Token(TokenType.TypeDeclaration, chars[c].ToString()));
-                        continue;
-                    }
-                    // Ignore newline and space characters
-                    else if (chars[c] == '\r' || chars[c] == '\n' || chars[c] == ' ')
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        throw new InvalidDataException($"Tokenizer: Did not expect '{chars[c]}' at position {c + 1}");
+                        if (tokenValue.StartsWith(targetTokenString[0]))
+                        {
+                            if (tokenValue == targetTokenString)
+                            {
+                                if (!matchedToken.HasValue || matchedToken.Value.TValue.Length < targetTokenString.Length)
+                                    matchedToken = new Token(targetTokenType, targetTokenString);
+                            }
+                            else if (tokenValue.Length < targetTokenString.Length)
+                            {
+                                partialMatch = true;
+                            }
+                        }
                     }
                 }
                 else if (state == TokenizerState.BuildingString)
@@ -522,6 +540,9 @@ namespace Zintom.StorageFacility
                 }
             }
 
+            if (previousMatchedToken.HasValue)
+                tokens.Add((Token)previousMatchedToken);
+
             if (state == TokenizerState.BuildingString)
                 throw new FormatException("String literal was declared however does not close before the end of file.");
             if (state == TokenizerState.BuildingByteString)
@@ -530,15 +551,159 @@ namespace Zintom.StorageFacility
             return tokens.ToArray();
         }
 
+        ///// <summary>
+        ///// Parses a given input converting to parsable <see cref="Token"/>'s.
+        ///// </summary>
+        //private static Token[] Tokenize(string input)
+        //{
+        //    List<Token> tokens = new List<Token>();
+
+        //    char[] chars = input.ToCharArray();
+
+        //    var state = TokenizerState.None;
+        //    var valueBuilder = new StringBuilder();
+
+        //    // Loop through all characters
+        //    for (int c = 0; c < chars.Length; c++)
+        //    {
+        //        if (state == TokenizerState.None)
+        //        {
+        //            // Start string definition
+        //            if (chars[c] == '"')
+        //            {
+        //                state = TokenizerState.BuildingString;
+        //                valueBuilder.Clear();
+        //                continue;
+        //            }
+        //            // Array item seperator
+        //            else if (chars[c] == ',')
+        //            {
+        //                tokens.Add(new Token(TokenType.Seperator, ""));
+        //                continue;
+        //            }
+        //            // End of Object
+        //            else if (chars[c] == ';')
+        //            {
+        //                tokens.Add(new Token(TokenType.ObjectTerminator, ""));
+        //                continue;
+        //            }
+        //            // Assign Array
+        //            else if (chars[c] == ':' && chars.ContainsAt(':', c + 1))//&& (c + 1 < chars.Length) && chars[c + 1] == ':')
+        //            {
+        //                tokens.Add(new Token(TokenType.ArrayAssignmentOperator, ""));
+        //                c++;
+        //                continue;
+        //            }
+        //            // Assign Single Value
+        //            else if (chars[c] == ':')
+        //            {
+        //                tokens.Add(new Token(TokenType.SingleValueAssignmentOperator, ""));
+        //                continue;
+        //            }
+        //            // Type Declaration
+        //            else if (chars[c] == 'R'
+        //                && chars.ContainsAt('A', c + 1) 
+        //                && chars.ContainsAt('W', c + 2))//c < chars.Length - 2 && chars[c + 1] == 'A' && chars[c + 2] == 'W')
+        //            {
+        //                tokens.Add(new Token(TokenType.TypeDeclaration, "RAW"));
+        //                state = TokenizerState.BuildingByteString;
+        //                valueBuilder.Clear();
+
+        //                // Increment past the two 'A' and 'W' characters.
+        //                c += 2;
+
+        //                continue;
+        //            }
+        //            else if (chars[c] == 'S' || chars[c] == 'B' || chars[c] == 'I' || chars[c] == 'L' || chars[c] == 'F')
+        //            {
+        //                tokens.Add(new Token(TokenType.TypeDeclaration, chars[c].ToString()));
+        //                continue;
+        //            }
+        //            // Ignore newline and space characters
+        //            else if (chars[c] == '\r' || chars[c] == '\n' || chars[c] == ' ')
+        //            {
+        //                continue;
+        //            }
+        //            else
+        //            {
+        //                throw new InvalidDataException($"Tokenizer: Did not expect '{chars[c]}' at position {c + 1}");
+        //            }
+        //        }
+        //        else if (state == TokenizerState.BuildingString)
+        //        {
+        //            // If end quote detected
+        //            if (chars[c] == '"' && !chars.ContainsAt('\\', c - 1))//chars[c - 1] != '\\')
+        //            {
+        //                // Add the built string to the token list.
+        //                tokens.Add(new Token(TokenType.String, valueBuilder.ToString()));
+
+        //                // Reset the state.
+        //                state = TokenizerState.None;
+        //                continue;
+        //            }
+        //            else
+        //            {
+        //                // Add the character to the string builder
+        //                valueBuilder.Append(chars[c]);
+        //                continue;
+        //            }
+        //        }
+        //        else if (state == TokenizerState.BuildingByteString)
+        //        {
+        //            // Ignore open bracket
+        //            if (chars[c] == '<') continue;
+
+        //            if (chars[c] != '>')
+        //                valueBuilder.Append(chars[c]);
+
+        //            if (chars[c] == '>')
+        //            {
+        //                c += 2;
+        //                //int arrayLength = BitConverter.ToInt32(Convert.FromBase64String(valueBuilder.ToString()), 0);
+        //                int arrayLength = Convert.ToInt32(valueBuilder.ToString(), 16);
+
+        //                if (input.Length < c + arrayLength)
+        //                    throw new InvalidDataException("RAW length-prefix extends beyond the size of the file.");
+
+        //                tokens.Add(new Token(TokenType.String, input.Substring(c, arrayLength)));
+        //                c += arrayLength; // Move past last quote.
+
+        //                state = TokenizerState.None;
+        //                continue;
+        //            }
+        //        }
+        //    }
+
+        //    if (state == TokenizerState.BuildingString)
+        //        throw new FormatException("String literal was declared however does not close before the end of file.");
+        //    if (state == TokenizerState.BuildingByteString)
+        //        throw new FormatException("RAW was declared however the file ends before the length-prefix finishes.");
+
+        //    return tokens.ToArray();
+        //}
+
+        private struct TokenMatch
+        {
+
+            public Token Token;
+            public bool FullyMatches;
+
+            public TokenMatch(Token token, bool fullyMatches)
+            {
+                Token = token;
+                FullyMatches = fullyMatches;
+            }
+        }
+
         private struct Token
         {
             public TokenType TType;
-            public string Value;
+            public string TValue;
 
             public Token(TokenType type, string value)
             {
                 TType = type;
-                Value = value;
+                TValue = value;
             }
         }
 
@@ -556,7 +721,7 @@ namespace Zintom.StorageFacility
             /// </summary>
             String,
             /// <summary>
-            /// Represents ','
+            /// Represents <see cref="TokenStrings.Seperator"/>
             /// </summary>
             Seperator,
             /// <summary>
@@ -564,18 +729,40 @@ namespace Zintom.StorageFacility
             /// </summary>
             TypeDeclaration,
             /// <summary>
-            /// Represents ':'
+            /// Represents <see cref="TokenStrings.AssignmentOperator"/>
             /// </summary>
-            SingleValueAssignmentOperator,
+            AssignmentOperator,
             /// <summary>
-            /// Represents '::'
+            /// Represents <see cref="TokenStrings.ArrayAssignmentOperator"/>
             /// </summary>
             ArrayAssignmentOperator,
             /// <summary>
-            /// Represents ';'
+            /// Represents <see cref="TokenStrings.ObjectTerminator"/>
             /// </summary>
             ObjectTerminator
         }
 
+        private static class TokenStrings
+        {
+            internal const string StringEnclosure = "\"";
+
+            internal const string Seperator = ",";
+
+            internal const string AssignmentOperator = ":";
+
+            internal const string ArrayAssignmentOperator = "::";
+
+            internal const string ObjectTerminator = ";";
+        }
+
+    }
+
+    public class InvalidTokenException : Exception
+    {
+        public InvalidTokenException() { }
+
+        public InvalidTokenException(string message) : base(message) { }
+
+        public InvalidTokenException(string message, Exception innerException) : base(message, innerException) { }
     }
 }
