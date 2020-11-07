@@ -153,7 +153,7 @@ namespace Zintom.StorageFacility
                 using (StreamWriter writer = new StreamWriter(file, Encoding.UTF8))
                 {
                     // Write single value objects to file:
-                    WriteKeyPairValues(Parent.strings, null);
+                    WriteKeyPairValues(Parent.strings, 'S');
                     WriteKeyPairValues(Parent.booleans, 'B');
                     WriteKeyPairValues(Parent.integers, 'I');
                     WriteKeyPairValues(Parent.longs, 'L');
@@ -168,7 +168,7 @@ namespace Zintom.StorageFacility
                     }
 
                     // Write all Arrays to file.
-                    WriteArray(Parent.stringArrays, null);
+                    WriteArray(Parent.stringArrays, 'S');
                     WriteArray(Parent.integerArrays, 'I');
                     WriteArray(Parent.longArrays, 'L');
                     WriteArray(Parent.floatArrays, 'F');
