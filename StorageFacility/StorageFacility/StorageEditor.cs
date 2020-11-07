@@ -163,7 +163,16 @@ namespace Zintom.StorageFacility
                     {
                         foreach (var key in keyValuePairs.Keys)
                         {
-                            writer.Write("\"" + key + "\"" + ":" + typeShortHand + "\"" + keyValuePairs[key] + "\";" + (OutputOptimizedForReading ? "\n" : ""));
+                            writer.Write(TokenStrings.StringEnclosure +
+                                         key +
+                                         TokenStrings.StringEnclosure +
+                                         TokenStrings.AssignmentOperator +
+                                         typeShortHand +
+                                         TokenStrings.StringEnclosure +
+                                         keyValuePairs[key] +
+                                         TokenStrings.StringEnclosure +
+                                         TokenStrings.ObjectTerminator +
+                                         (OutputOptimizedForReading ? "\n" : ""));
                         }
                     }
 
@@ -178,18 +187,26 @@ namespace Zintom.StorageFacility
                         foreach (var arrayName in keyValuePairs.Keys)
                         {
                             StringBuilder arrayBuilder = new StringBuilder();
-                            arrayBuilder.Append("\"" + arrayName + "\"" + "::" + typeShortHand);
+                            arrayBuilder.Append(TokenStrings.StringEnclosure + 
+                                                arrayName +
+                                                TokenStrings.StringEnclosure +
+                                                TokenStrings.ArrayAssignmentOperator + 
+                                                typeShortHand);
+
                             foreach (var value in keyValuePairs[arrayName])
                             {
-                                arrayBuilder.Append("\"" + value + "\",");
+                                arrayBuilder.Append(TokenStrings.StringEnclosure + 
+                                                    value + 
+                                                    TokenStrings.StringEnclosure + 
+                                                    TokenStrings.Seperator);
                             }
 
                             // Overwrite the final 'seperator' at the end of the array builder.
-                            arrayBuilder.Remove(arrayBuilder.Length - 1, 1);
+                            arrayBuilder.Remove(arrayBuilder.Length - TokenStrings.Seperator.Length, TokenStrings.Seperator.Length);
                             // Append object terminator
-                            arrayBuilder.Append(";" + (OutputOptimizedForReading ? "\n" : ""));
+                            arrayBuilder.Append(TokenStrings.ObjectTerminator);
                             // Write to file.
-                            writer.Write(arrayBuilder.ToString());
+                            writer.Write(arrayBuilder.ToString() + (OutputOptimizedForReading ? "\n" : ""));
                         }
                     }
 
@@ -198,7 +215,16 @@ namespace Zintom.StorageFacility
                     {
                         string value = Convert.ToBase64String(Parent.raws[name]);
 
-                        writer.Write("\"" + name + "\"" + "::" + "RAW<" + Convert.ToString(value.Length, 16) + ">\"" + value + "\";" + (OutputOptimizedForReading ? "\n" : ""));
+                        writer.Write(TokenStrings.StringEnclosure +
+                                     name +
+                                     TokenStrings.StringEnclosure +
+                                     TokenStrings.AssignmentOperator +
+                                     "RAW<" + Convert.ToString(value.Length, 16) + ">" +
+                                     TokenStrings.StringEnclosure +
+                                     value +
+                                     TokenStrings.StringEnclosure +
+                                     TokenStrings.ObjectTerminator +
+                                     (OutputOptimizedForReading ? "\n" : ""));
                     }
                 }
                 return this;
