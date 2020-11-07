@@ -60,71 +60,80 @@ namespace Zintom.StorageFacility
 
             Token[] tokens = Tokenize(fileContents);
 
-            List<Token> sequenceBuilder = new List<Token>();
-            for (int t = 0; t < tokens.Length; t++)
+            int index = 0;
+            int selectionLength = 0;
+
+            while (true)
             {
-                // Add the next token to the builder of tokens
-                sequenceBuilder.Add(tokens[t]);
+                // Expand token span selection by one.
+                selectionLength++;
 
-                //TODO MOVE TO Array Slice.
+                if (index >= tokens.Length)
+                    break;
 
-                // Check if tokens read so far match a sequence
+                if (index + selectionLength > tokens.Length)
+                {
+                    Debug.WriteLine("Parser: Storage format unrecognised; its format may be out of date, or the file has been tampered with or is corrupt.");
+                    break;
+                }
+
+                // The slice of tokens we are testing.
+                ReadOnlySpan<Token> tokenSequenceSpan = tokens.AsSpan(index, selectionLength);
 
                 // Match assumed strings (assumed strings are those without a Type prefix, we assume these are String types).
-                if (AddToDictionaryIfKeyPairNotNull(strings, MatchDefineAssumeStringAssignment(sequenceBuilder))) continue;
+                //if (AddToDictionaryIfKeyPairNotNull(strings, MatchDefineAssumeStringAssignment(sequenceBuilder))) continue;
 
                 // Match strings
-                else if (AddToDictionaryIfKeyPairNotNull(strings, MatchDefineValueAssignment<string>(sequenceBuilder))) continue;
+                if (AddToDictionaryIfKeyPairNotNull(strings, MatchDefineValueAssignment<string>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match booleans
-                else if (AddToDictionaryIfKeyPairNotNull(booleans, MatchDefineValueAssignment<bool>(sequenceBuilder))) continue;
+                else if (AddToDictionaryIfKeyPairNotNull(booleans, MatchDefineValueAssignment<bool>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match integers
-                else if (AddToDictionaryIfKeyPairNotNull(integers, MatchDefineValueAssignment<int>(sequenceBuilder))) continue;
+                else if (AddToDictionaryIfKeyPairNotNull(integers, MatchDefineValueAssignment<int>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match longs
-                else if (AddToDictionaryIfKeyPairNotNull(longs, MatchDefineValueAssignment<long>(sequenceBuilder))) continue;
+                else if (AddToDictionaryIfKeyPairNotNull(longs, MatchDefineValueAssignment<long>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match floats
-                else if (AddToDictionaryIfKeyPairNotNull(floats, MatchDefineValueAssignment<float>(sequenceBuilder))) continue;
+                else if (AddToDictionaryIfKeyPairNotNull(floats, MatchDefineValueAssignment<float>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match raws
-                else if (AddToDictionaryIfKeyPairNotNull(raws, MatchDefineRawValueAssignment(sequenceBuilder))) continue;
+                else if (AddToDictionaryIfKeyPairNotNull(raws, MatchDefineValueAssignment<byte[]>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match assumed string arrays
-                else if (AddToDictionaryIfKeyPairNotNull(stringArrays, MatchDefineAssumeStringArray(sequenceBuilder))) continue;
+                //else if (AddToDictionaryIfKeyPairNotNull(stringArrays, MatchDefineAssumeStringArray(sequenceBuilder))) continue;
 
                 // Match string arrays
-                else if (AddToDictionaryIfKeyPairNotNull(stringArrays, MatchDefineArrayAssignment<string>(sequenceBuilder))) continue;
+                else if (AddToDictionaryIfKeyPairNotNull(stringArrays, MatchDefineArrayAssignment<string>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match integer arrays
-                else if (AddToDictionaryIfKeyPairNotNull(integerArrays, MatchDefineArrayAssignment<int>(sequenceBuilder))) continue;
+                else if (AddToDictionaryIfKeyPairNotNull(integerArrays, MatchDefineArrayAssignment<int>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match long arrays
-                else if (AddToDictionaryIfKeyPairNotNull(longArrays, MatchDefineArrayAssignment<long>(sequenceBuilder))) continue;
+                else if (AddToDictionaryIfKeyPairNotNull(longArrays, MatchDefineArrayAssignment<long>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match float arrays
-                else if (AddToDictionaryIfKeyPairNotNull(floatArrays, MatchDefineArrayAssignment<float>(sequenceBuilder))) continue;
+                else if (AddToDictionaryIfKeyPairNotNull(floatArrays, MatchDefineArrayAssignment<float>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
-                bool AddToDictionaryIfKeyPairNotNull<T>(Dictionary<string, T> targetDictionary, KeyValuePair<string, T>? keyPair)
+                static bool AddToDictionaryIfKeyPairNotNull<T>(Dictionary<string, T> targetDictionary, KeyValuePair<string, T>? keyPair)
                 {
                     if (keyPair.HasValue)
                     {
-                        // If the object is string, ensure it gets unescaped.
-                        if (typeof(T) == typeof(string))
-                            targetDictionary.Add(keyPair.Value.Key, ChangeType<T>(Helpers.UnEscapeString(ChangeType<string>(keyPair.Value.Value))));
-                        else
-                            targetDictionary.Add(keyPair.Value.Key, keyPair.Value.Value);
-
-                        sequenceBuilder.Clear();
+                        targetDictionary.Add(keyPair.Value.Key, keyPair.Value.Value);
                         return true;
                     }
-
-                    return false;
+                    else
+                    {
+                        return false;
+                    }
                 }
 
-                if (t == tokens.Length - 1)
-                    throw new FormatException("Parser: Invalid storage format, file has been tampered with or is corrupt.");
+                void MoveToNextTokenSequence()
+                {
+                    index += selectionLength;
+                    selectionLength = 0;
+                }
             }
 
             DisplayLoadedValues();
@@ -275,54 +284,54 @@ namespace Zintom.StorageFacility
 
         //}
 
-        [Obsolete("This will be removed in future versions, strings are now fully qualified by default")]
-        static KeyValuePair<string, string>? MatchDefineAssumeStringAssignment(List<Token> tokens)
+        //[Obsolete("This will be removed in future versions, strings are now fully qualified by default")]
+        //static KeyValuePair<string, string>? MatchDefineAssumeStringAssignment(List<Token> tokens)
+        //{
+        //    if (tokens.Count != 4) return null;
+        //    if (tokens[0].TType != TokenType.String) return null;
+        //    if (tokens[1].TType != TokenType.AssignmentOperator) return null;
+        //    if (tokens[2].TType != TokenType.String) return null;
+
+        //    // Sequence infers String, so add the String Type Declaration token to the list of tokens and use the Generic method.
+        //    tokens.Insert(2, new Token(TokenType.TypeDeclaration, "S"));
+
+        //    Debug.WriteLine("StorageParser: No type was given for object '" + tokens[0].Value + "', so its value '" + tokens[3].Value + "' was assumed to be a String.");
+
+        //    return MatchDefineValueAssignment<string>(tokens);
+        //}
+
+        //[Obsolete("This will be removed in future versions, strings are now fully qualified by default")]
+        //static KeyValuePair<string, string[]>? MatchDefineAssumeStringArray(List<Token> tokens)
+        //{
+        //    if (tokens.Count < 4) return null;
+        //    if (tokens[0].TType != TokenType.String) return null;
+        //    if (tokens[1].TType != TokenType.ArrayAssignmentOperator) return null;
+        //    if (tokens[2].TType != TokenType.String) return null;
+
+        //    // Sequence infers String, so add the String Type Declaration token to the list of tokens and use the Generic method.
+        //    tokens.Insert(2, new Token(TokenType.TypeDeclaration, "S"));
+
+        //    Debug.WriteLine("StorageParser: No type was given for array '" + tokens[0].Value + "', so it was assumed to be a StringArray.");
+
+        //    return MatchDefineArrayAssignment<string>(tokens);
+        //}
+
+        //static KeyValuePair<string, byte[]>? MatchDefineRawValueAssignment(ReadOnlySpan<Token> tokens)
+        //{
+        //    if (tokens.Length != 5
+        //        || tokens[0].TType != TokenType.String
+        //        || tokens[1].TType != TokenType.ArrayAssignmentOperator
+        //        || tokens[2].TType != TokenType.TypeDeclaration
+        //        || GetTypeFromShortHand(tokens[2].Value) != typeof(byte[])
+        //        || tokens[3].TType != TokenType.String
+        //        || tokens[4].TType != TokenType.ObjectTerminator) return null;
+
+        //    return new KeyValuePair<string, byte[]>(tokens[0].Value, Convert.FromBase64String(tokens[3].Value));
+        //}
+
+        static KeyValuePair<string, T>? MatchDefineValueAssignment<T>(ReadOnlySpan<Token> tokens)
         {
-            if (tokens.Count != 4) return null;
-            if (tokens[0].TType != TokenType.String) return null;
-            if (tokens[1].TType != TokenType.AssignmentOperator) return null;
-            if (tokens[2].TType != TokenType.String) return null;
-
-            // Sequence infers String, so add the String Type Declaration token to the list of tokens and use the Generic method.
-            tokens.Insert(2, new Token(TokenType.TypeDeclaration, "S"));
-
-            Debug.WriteLine("StorageParser: No type was given for object '" + tokens[0].Value + "', so its value '" + tokens[3].Value + "' was assumed to be a String.");
-
-            return MatchDefineValueAssignment<string>(tokens);
-        }
-
-        [Obsolete("This will be removed in future versions, strings are now fully qualified by default")]
-        static KeyValuePair<string, string[]>? MatchDefineAssumeStringArray(List<Token> tokens)
-        {
-            if (tokens.Count < 4) return null;
-            if (tokens[0].TType != TokenType.String) return null;
-            if (tokens[1].TType != TokenType.ArrayAssignmentOperator) return null;
-            if (tokens[2].TType != TokenType.String) return null;
-
-            // Sequence infers String, so add the String Type Declaration token to the list of tokens and use the Generic method.
-            tokens.Insert(2, new Token(TokenType.TypeDeclaration, "S"));
-
-            Debug.WriteLine("StorageParser: No type was given for array '" + tokens[0].Value + "', so it was assumed to be a StringArray.");
-
-            return MatchDefineArrayAssignment<string>(tokens);
-        }
-
-        static KeyValuePair<string, byte[]>? MatchDefineRawValueAssignment(List<Token> tokens)
-        {
-            if (tokens.Count != 5
-                || tokens[0].TType != TokenType.String
-                || tokens[1].TType != TokenType.ArrayAssignmentOperator
-                || tokens[2].TType != TokenType.TypeDeclaration
-                || GetTypeFromShortHand(tokens[2].Value) != typeof(byte[])
-                || tokens[3].TType != TokenType.String
-                || tokens[4].TType != TokenType.ObjectTerminator) return null;
-
-            return new KeyValuePair<string, byte[]>(tokens[0].Value, Convert.FromBase64String(tokens[3].Value));
-        }
-
-        static KeyValuePair<string, T>? MatchDefineValueAssignment<T>(List<Token> tokens)
-        {
-            if (tokens.Count != 5
+            if (tokens.Length != 5
                 || tokens[0].TType != TokenType.String
                 || tokens[1].TType != TokenType.AssignmentOperator
                 || tokens[2].TType != TokenType.TypeDeclaration
@@ -330,12 +339,25 @@ namespace Zintom.StorageFacility
                 || tokens[3].TType != TokenType.String
                 || tokens[4].TType != TokenType.ObjectTerminator) return null;
 
-            return new KeyValuePair<string, T>(tokens[0].Value, ChangeType<T>(tokens[3].Value));
+            if (typeof(T) == typeof(string)) // String
+            {
+                // Unescape string before return to caller.
+                return new KeyValuePair<string, T>(tokens[0].Value, ChangeType<T>(Helpers.UnEscapeString(ChangeType<string>(tokens[3].Value))));
+            }
+            else if (typeof(T) == typeof(byte[])) // Raws
+            {
+                // Convert from Base64 to byte[] before return to caller.
+                return new KeyValuePair<string, T>(tokens[0].Value, ChangeType<T>(Convert.FromBase64String(tokens[3].Value)));
+            }
+            else
+            {
+                return new KeyValuePair<string, T>(tokens[0].Value, ChangeType<T>(tokens[3].Value));
+            }
         }
 
-        static KeyValuePair<string, T[]>? MatchDefineArrayAssignment<T>(List<Token> tokens)
+        static KeyValuePair<string, T[]>? MatchDefineArrayAssignment<T>(ReadOnlySpan<Token> tokens)
         {
-            if (tokens.Count < 4) return null;
+            if (tokens.Length < 4) return null;
             if (tokens[0].TType != TokenType.String) return null;
             if (tokens[1].TType != TokenType.ArrayAssignmentOperator) return null;
 
@@ -345,7 +367,7 @@ namespace Zintom.StorageFacility
             List<T> arrayObjects = new List<T>();
             arrayObjects.Add(ChangeType<T>(tokens[3].Value)); // Add first value
 
-            for (int i = 3; i < tokens.Count; i++)
+            for (int i = 3; i < tokens.Length; i++)
             {
                 Token currentToken = tokens[i];
                 TokenType previousTokenType = tokens[i - 1].TType;
@@ -696,7 +718,7 @@ namespace Zintom.StorageFacility
         //    return tokens.ToArray();
         //}
 
-        private class Token
+        private sealed class Token
         {
 
             /// <summary>
@@ -766,7 +788,7 @@ namespace Zintom.StorageFacility
 
     }
 
-    public class InvalidTokenException : Exception
+    public sealed class InvalidTokenException : Exception
     {
         public InvalidTokenException() { }
 
