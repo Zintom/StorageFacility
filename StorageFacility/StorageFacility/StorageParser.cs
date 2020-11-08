@@ -14,7 +14,7 @@ namespace Zintom.StorageFacility
         /// <summary>
         /// Gets the string contents of the given storage file.
         /// </summary>
-        private static string GetStorageFileContents(string path)
+        private static string? GetStorageFileContents(string path)
         {
             try
             {
@@ -22,7 +22,7 @@ namespace Zintom.StorageFacility
                 if (string.IsNullOrEmpty(fileContents))
                 {
                     Debug.WriteLine("StorageFacility.Storage: The given storage file is empty.");
-                    return "";
+                    return null;
                 }
                 else
                 {
@@ -36,7 +36,7 @@ namespace Zintom.StorageFacility
                     Debug.WriteLine("StorageFacility.Storage: The given storage file does not exist, creating now.");
 
                     File.Create(path).Dispose();
-                    return "";
+                    return null;
                 }
                 else if (ex is DirectoryNotFoundException ||
                          ex is PathTooLongException ||
@@ -44,7 +44,7 @@ namespace Zintom.StorageFacility
                 {
                     Debug.WriteLine("StorageFacility.Storage: The given path to the storage file is incorrect or inaccessible.");
 
-                    return "";
+                    return null;
                 }
 
                 throw;
@@ -56,7 +56,9 @@ namespace Zintom.StorageFacility
         /// </summary>
         private void ParseStorageFile()
         {
-            string fileContents = GetStorageFileContents(StoragePath);
+            string? fileContents = GetStorageFileContents(StoragePath);
+
+            if (fileContents == null) return;
 
             Token[] tokens = Tokenize(fileContents);
 
@@ -84,50 +86,37 @@ namespace Zintom.StorageFacility
                 //if (AddToDictionaryIfKeyPairNotNull(strings, MatchDefineAssumeStringAssignment(sequenceBuilder))) continue;
 
                 // Match strings
-                if (AddToDictionaryIfKeyPairNotNull(strings, MatchDefineValueAssignment<string>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                if (_strings.AddIfNotNull(MatchDefineValueAssignment<string>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match booleans
-                else if (AddToDictionaryIfKeyPairNotNull(booleans, MatchDefineValueAssignment<bool>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                else if (_booleans.AddIfNotNull(MatchDefineValueAssignment<bool>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match integers
-                else if (AddToDictionaryIfKeyPairNotNull(integers, MatchDefineValueAssignment<int>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                else if (_integers.AddIfNotNull(MatchDefineValueAssignment<int>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match longs
-                else if (AddToDictionaryIfKeyPairNotNull(longs, MatchDefineValueAssignment<long>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                else if (_longs.AddIfNotNull(MatchDefineValueAssignment<long>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match floats
-                else if (AddToDictionaryIfKeyPairNotNull(floats, MatchDefineValueAssignment<float>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                else if (_floats.AddIfNotNull(MatchDefineValueAssignment<float>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match raws
-                else if (AddToDictionaryIfKeyPairNotNull(raws, MatchDefineValueAssignment<byte[]>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                else if (_raws.AddIfNotNull(MatchDefineValueAssignment<byte[]>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match assumed string arrays
                 //else if (AddToDictionaryIfKeyPairNotNull(stringArrays, MatchDefineAssumeStringArray(sequenceBuilder))) continue;
 
                 // Match string arrays
-                else if (AddToDictionaryIfKeyPairNotNull(stringArrays, MatchDefineArrayAssignment<string>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                else if (_stringArrays.AddIfNotNull(MatchDefineArrayAssignment<string>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match integer arrays
-                else if (AddToDictionaryIfKeyPairNotNull(integerArrays, MatchDefineArrayAssignment<int>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                else if (_integerArrays.AddIfNotNull(MatchDefineArrayAssignment<int>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match long arrays
-                else if (AddToDictionaryIfKeyPairNotNull(longArrays, MatchDefineArrayAssignment<long>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                else if (_longArrays.AddIfNotNull(MatchDefineArrayAssignment<long>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 // Match float arrays
-                else if (AddToDictionaryIfKeyPairNotNull(floatArrays, MatchDefineArrayAssignment<float>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
-
-                static bool AddToDictionaryIfKeyPairNotNull<T>(Dictionary<string, T> targetDictionary, KeyValuePair<string, T>? keyPair)
-                {
-                    if (keyPair.HasValue)
-                    {
-                        targetDictionary.Add(keyPair.Value.Key, keyPair.Value.Value);
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
+                else if (_floatArrays.AddIfNotNull(MatchDefineArrayAssignment<float>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
 
                 void MoveToNextTokenSequence()
                 {
@@ -147,40 +136,40 @@ namespace Zintom.StorageFacility
             Debug.WriteLine($"▼ Storage Loaded(\"{StoragePath}\") ▼");
 
             Debug.WriteLine($"Strings:");
-            DisplayDictionary(strings);
+            DisplayDictionary(_strings);
 
             Debug.WriteLine($"Booleans:");
-            DisplayDictionary(booleans);
+            DisplayDictionary(_booleans);
 
             Debug.WriteLine($"Integers:");
-            DisplayDictionary(integers);
+            DisplayDictionary(_integers);
 
             Debug.WriteLine($"Longs:");
-            DisplayDictionary(longs);
+            DisplayDictionary(_longs);
 
             Debug.WriteLine($"Floating Point Numbers:");
-            DisplayDictionary(floats);
+            DisplayDictionary(_floats);
 
             Debug.WriteLine($"Raws (encoded in Base64 for brevity):");
-            foreach (var key in raws.Keys)
+            foreach (var key in _raws.Keys)
             {
-                if (raws[key].Length < 2048)
-                    Debug.WriteLine(" '" + key + "' => '" + Convert.ToBase64String(raws[key]) + "'");
+                if (_raws[key].Length < 2048)
+                    Debug.WriteLine(" '" + key + "' => '" + Convert.ToBase64String(_raws[key]) + "'");
                 else
-                    Debug.WriteLine(" '" + key + "' => Value size exceeds safe display limit(" + raws[key].Length + ")!");
+                    Debug.WriteLine(" '" + key + "' => Value size exceeds safe display limit(" + _raws[key].Length + ")!");
             }
 
             Debug.WriteLine($"String arrays:");
-            DisplayArray(stringArrays);
+            DisplayArray(_stringArrays);
 
             Debug.WriteLine($"Integer arrays:");
-            DisplayArray(integerArrays);
+            DisplayArray(_integerArrays);
 
             Debug.WriteLine($"Long arrays:");
-            DisplayArray(longArrays);
+            DisplayArray(_longArrays);
 
             Debug.WriteLine($"Float arrays:");
-            DisplayArray(floatArrays);
+            DisplayArray(_floatArrays);
 
             static void DisplayDictionary<TKey, TValue>(Dictionary<TKey, TValue> pairs) where TKey : notnull
             {
@@ -411,6 +400,7 @@ namespace Zintom.StorageFacility
         {
             return shortHandType switch
             {
+                "S" => typeof(string),
                 "B" => typeof(bool),
                 "I" => typeof(int),
                 "L" => typeof(long),
@@ -586,137 +576,6 @@ namespace Zintom.StorageFacility
 
             return tokens.ToArray();
         }
-
-        ///// <summary>
-        ///// Parses a given input converting to parsable <see cref="Token"/>'s.
-        ///// </summary>
-        //private static Token[] Tokenize(string input)
-        //{
-        //    List<Token> tokens = new List<Token>();
-
-        //    char[] chars = input.ToCharArray();
-
-        //    var state = TokenizerState.None;
-        //    var valueBuilder = new StringBuilder();
-
-        //    // Loop through all characters
-        //    for (int c = 0; c < chars.Length; c++)
-        //    {
-        //        if (state == TokenizerState.None)
-        //        {
-        //            // Start string definition
-        //            if (chars[c] == '"')
-        //            {
-        //                state = TokenizerState.BuildingString;
-        //                valueBuilder.Clear();
-        //                continue;
-        //            }
-        //            // Array item seperator
-        //            else if (chars[c] == ',')
-        //            {
-        //                tokens.Add(new Token(TokenType.Seperator, ""));
-        //                continue;
-        //            }
-        //            // End of Object
-        //            else if (chars[c] == ';')
-        //            {
-        //                tokens.Add(new Token(TokenType.ObjectTerminator, ""));
-        //                continue;
-        //            }
-        //            // Assign Array
-        //            else if (chars[c] == ':' && chars.ContainsAt(':', c + 1))//&& (c + 1 < chars.Length) && chars[c + 1] == ':')
-        //            {
-        //                tokens.Add(new Token(TokenType.ArrayAssignmentOperator, ""));
-        //                c++;
-        //                continue;
-        //            }
-        //            // Assign Single Value
-        //            else if (chars[c] == ':')
-        //            {
-        //                tokens.Add(new Token(TokenType.SingleValueAssignmentOperator, ""));
-        //                continue;
-        //            }
-        //            // Type Declaration
-        //            else if (chars[c] == 'R'
-        //                && chars.ContainsAt('A', c + 1) 
-        //                && chars.ContainsAt('W', c + 2))//c < chars.Length - 2 && chars[c + 1] == 'A' && chars[c + 2] == 'W')
-        //            {
-        //                tokens.Add(new Token(TokenType.TypeDeclaration, "RAW"));
-        //                state = TokenizerState.BuildingByteString;
-        //                valueBuilder.Clear();
-
-        //                // Increment past the two 'A' and 'W' characters.
-        //                c += 2;
-
-        //                continue;
-        //            }
-        //            else if (chars[c] == 'S' || chars[c] == 'B' || chars[c] == 'I' || chars[c] == 'L' || chars[c] == 'F')
-        //            {
-        //                tokens.Add(new Token(TokenType.TypeDeclaration, chars[c].ToString()));
-        //                continue;
-        //            }
-        //            // Ignore newline and space characters
-        //            else if (chars[c] == '\r' || chars[c] == '\n' || chars[c] == ' ')
-        //            {
-        //                continue;
-        //            }
-        //            else
-        //            {
-        //                throw new InvalidDataException($"Tokenizer: Did not expect '{chars[c]}' at position {c + 1}");
-        //            }
-        //        }
-        //        else if (state == TokenizerState.BuildingString)
-        //        {
-        //            // If end quote detected
-        //            if (chars[c] == '"' && !chars.ContainsAt('\\', c - 1))//chars[c - 1] != '\\')
-        //            {
-        //                // Add the built string to the token list.
-        //                tokens.Add(new Token(TokenType.String, valueBuilder.ToString()));
-
-        //                // Reset the state.
-        //                state = TokenizerState.None;
-        //                continue;
-        //            }
-        //            else
-        //            {
-        //                // Add the character to the string builder
-        //                valueBuilder.Append(chars[c]);
-        //                continue;
-        //            }
-        //        }
-        //        else if (state == TokenizerState.BuildingByteString)
-        //        {
-        //            // Ignore open bracket
-        //            if (chars[c] == '<') continue;
-
-        //            if (chars[c] != '>')
-        //                valueBuilder.Append(chars[c]);
-
-        //            if (chars[c] == '>')
-        //            {
-        //                c += 2;
-        //                //int arrayLength = BitConverter.ToInt32(Convert.FromBase64String(valueBuilder.ToString()), 0);
-        //                int arrayLength = Convert.ToInt32(valueBuilder.ToString(), 16);
-
-        //                if (input.Length < c + arrayLength)
-        //                    throw new InvalidDataException("RAW length-prefix extends beyond the size of the file.");
-
-        //                tokens.Add(new Token(TokenType.String, input.Substring(c, arrayLength)));
-        //                c += arrayLength; // Move past last quote.
-
-        //                state = TokenizerState.None;
-        //                continue;
-        //            }
-        //        }
-        //    }
-
-        //    if (state == TokenizerState.BuildingString)
-        //        throw new FormatException("String literal was declared however does not close before the end of file.");
-        //    if (state == TokenizerState.BuildingByteString)
-        //        throw new FormatException("RAW was declared however the file ends before the length-prefix finishes.");
-
-        //    return tokens.ToArray();
-        //}
 
         private sealed class Token
         {
