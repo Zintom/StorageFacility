@@ -11,79 +11,79 @@ namespace Zintom.StorageFacility
 
         private string StoragePath = "";
 
-        private readonly object editor_locker = new object();
-        private IStorageEditor? editor;
+        private readonly object _editorLocker = new object();
+        private IStorageEditor? _editor;
 
-        private readonly static object storagePool_locker = new object();
-        private readonly static List<Storage> storagePool = new List<Storage>();
+        private readonly static object _storagePoolLocker = new object();
+        private readonly static List<Storage> _storagePool = new List<Storage>();
 
         // To add more types, ensure the following:
         // - StorageParser checks for the new type.
         // - The GetTypeFromShortHand() method is updated with the new type.
         // - The IStorageEditor has a PutValue method for the new type, commits the type to file, and clears on Clear().
         // - Make sure to add a Public Property here.
-        private readonly Dictionary<string, string> strings = new Dictionary<string, string>();
-        private readonly Dictionary<string, bool> booleans = new Dictionary<string, bool>();
-        private readonly Dictionary<string, int> integers = new Dictionary<string, int>();
-        private readonly Dictionary<string, long> longs = new Dictionary<string, long>();
-        private readonly Dictionary<string, float> floats = new Dictionary<string, float>();
+        private readonly Dictionary<string, string> _strings = new Dictionary<string, string>();
+        private readonly Dictionary<string, bool> _booleans = new Dictionary<string, bool>();
+        private readonly Dictionary<string, int> _integers = new Dictionary<string, int>();
+        private readonly Dictionary<string, long> _longs = new Dictionary<string, long>();
+        private readonly Dictionary<string, float> _floats = new Dictionary<string, float>();
 
-        private readonly Dictionary<string, string[]> stringArrays = new Dictionary<string, string[]>();
-        private readonly Dictionary<string, int[]> integerArrays = new Dictionary<string, int[]>();
-        private readonly Dictionary<string, long[]> longArrays = new Dictionary<string, long[]>();
-        private readonly Dictionary<string, float[]> floatArrays = new Dictionary<string, float[]>();
-        private readonly Dictionary<string, byte[]> raws = new Dictionary<string, byte[]>();
+        private readonly Dictionary<string, string[]> _stringArrays = new Dictionary<string, string[]>();
+        private readonly Dictionary<string, int[]> _integerArrays = new Dictionary<string, int[]>();
+        private readonly Dictionary<string, long[]> _longArrays = new Dictionary<string, long[]>();
+        private readonly Dictionary<string, float[]> _floatArrays = new Dictionary<string, float[]>();
+        private readonly Dictionary<string, byte[]> _raws = new Dictionary<string, byte[]>();
 
         #region Public Properties
         /// <summary>
         /// A dictionary of all <see cref="bool"/>'s contained within this <see cref="Storage"/>.
         /// </summary>
-        public IReadOnlyDictionary<string, bool> Booleans { get => booleans; }
+        public IReadOnlyDictionary<string, bool> Booleans { get => _booleans; }
 
         /// <summary>
         /// A dictionary of all <see cref="int"/>'s contained within this <see cref="Storage"/>.
         /// </summary>
-        public IReadOnlyDictionary<string, int> Integers { get => integers; }
+        public IReadOnlyDictionary<string, int> Integers { get => _integers; }
 
         /// <summary>
         /// A dictionary of all <see cref="long"/>'s contained within this <see cref="Storage"/>.
         /// </summary>
-        public IReadOnlyDictionary<string, long> Longs { get => longs; }
+        public IReadOnlyDictionary<string, long> Longs { get => _longs; }
 
         /// <summary>
         /// A dictionary of all <see cref="float"/>'s contained within this <see cref="Storage"/>.
         /// </summary>
-        public IReadOnlyDictionary<string, float> Floats { get => floats; }
+        public IReadOnlyDictionary<string, float> Floats { get => _floats; }
 
         /// <summary>
         /// A dictionary of all <see cref="string"/>'s contained within this <see cref="Storage"/>.
         /// </summary>
-        public IReadOnlyDictionary<string, string> Strings { get => strings; }
+        public IReadOnlyDictionary<string, string> Strings { get => _strings; }
 
         /// <summary>
         /// A dictionary of all string arrays contained within this <see cref="Storage"/>.
         /// </summary>
-        public IReadOnlyDictionary<string, string[]> StringArrays { get => stringArrays; }
+        public IReadOnlyDictionary<string, string[]> StringArrays { get => _stringArrays; }
 
         /// <summary>
         /// A dictionary of all integer arrays contained within this <see cref="Storage"/>.
         /// </summary>
-        public IReadOnlyDictionary<string, int[]> IntegerArrays { get => integerArrays; }
+        public IReadOnlyDictionary<string, int[]> IntegerArrays { get => _integerArrays; }
 
         /// <summary>
         /// A dictionary of all <see cref="long"/> arrays contained within this <see cref="Storage"/>.
         /// </summary>
-        public IReadOnlyDictionary<string, long[]> LongArrays { get => longArrays; }
+        public IReadOnlyDictionary<string, long[]> LongArrays { get => _longArrays; }
 
         /// <summary>
         /// A dictionary of all <see cref="float"/> arrays contained within this <see cref="Storage"/>.
         /// </summary>
-        public IReadOnlyDictionary<string, float[]> FloatArrays { get => floatArrays; }
+        public IReadOnlyDictionary<string, float[]> FloatArrays { get => _floatArrays; }
 
         /// <summary>
         /// A dictionary of all <see cref="byte"/> arrays contained within this <see cref="Storage"/>.
         /// </summary>
-        public IReadOnlyDictionary<string, byte[]> Raws { get => raws; }
+        public IReadOnlyDictionary<string, byte[]> Raws { get => _raws; }
         #endregion
 
         private Storage()
@@ -99,26 +99,26 @@ namespace Zintom.StorageFacility
         public static Storage GetStorage(string filePath)
         {
             // Lock so that we don't create more than one of the same storage.
-            Monitor.Enter(storagePool_locker);
+            Monitor.Enter(_storagePoolLocker);
 
             // Check all loaded storages to see if we already have one for this file.
-            for (int i = 0; i < storagePool.Count; i++)
+            for (int i = 0; i < _storagePool.Count; i++)
             {
-                if (storagePool[i].StoragePath == filePath)
+                if (_storagePool[i].StoragePath == filePath)
                 {
-                    Monitor.Exit(storagePool_locker);
-                    return storagePool[i];
+                    Monitor.Exit(_storagePoolLocker);
+                    return _storagePool[i];
                 }
             }
 
             // Storage does not exist in memory yet, so create it.
             Storage s = new Storage();
             s.StoragePath = filePath;
-            storagePool.Add(s);
+            _storagePool.Add(s);
 
             // Release lock before we start parsing the storage file
             // as we shouldn't be holding onto the lock for too long.
-            Monitor.Exit(storagePool_locker);
+            Monitor.Exit(_storagePoolLocker);
 
             s.ParseStorageFile();
 
@@ -134,13 +134,13 @@ namespace Zintom.StorageFacility
         public IStorageEditor Edit(bool outputOptimizedForReading = true)
         {
             // Only allow one editor to exist at one time.
-            lock (editor_locker)
+            lock (_editorLocker)
             {
-                if (editor == null)
-                    editor = new StorageEditor(this, outputOptimizedForReading);
+                if (_editor == null)
+                    _editor = new StorageEditor(this, outputOptimizedForReading);
             }
 
-            return editor;
+            return _editor;
         }
     }
 }
