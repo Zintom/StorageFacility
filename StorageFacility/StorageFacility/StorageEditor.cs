@@ -83,31 +83,31 @@ namespace Zintom.StorageFacility
 
             public IStorageEditor PutValue(string key, bool value)
             {
-                Parent.booleans.AddOrReplace(EscapeString(key), value);
+                Parent._booleans.AddOrReplace(EscapeString(key), value);
                 return this;
             }
 
             public IStorageEditor PutValue(string key, int value)
             {
-                Parent.integers.AddOrReplace(EscapeString(key), value);
+                Parent._integers.AddOrReplace(EscapeString(key), value);
                 return this;
             }
 
             public IStorageEditor PutValue(string key, long value)
             {
-                Parent.longs.AddOrReplace(EscapeString(key), value);
+                Parent._longs.AddOrReplace(EscapeString(key), value);
                 return this;
             }
 
             public IStorageEditor PutValue(string key, float value)
             {
-                Parent.floats.AddOrReplace(EscapeString(key), value);
+                Parent._floats.AddOrReplace(EscapeString(key), value);
                 return this;
             }
 
             public IStorageEditor PutValue(string key, string value)
             {
-                Parent.strings.AddOrReplace(EscapeString(key), EscapeString(value));
+                Parent._strings.AddOrReplace(EscapeString(key), EscapeString(value));
                 return this;
             }
 
@@ -118,31 +118,31 @@ namespace Zintom.StorageFacility
                     values[i] = EscapeString(values[i]);
                 }
 
-                Parent.stringArrays.AddOrReplace(EscapeString(key), values);
+                Parent._stringArrays.AddOrReplace(EscapeString(key), values);
                 return this;
             }
 
             public IStorageEditor PutValue(string key, int[] values)
             {
-                Parent.integerArrays.AddOrReplace(EscapeString(key), values);
+                Parent._integerArrays.AddOrReplace(EscapeString(key), values);
                 return this;
             }
 
             public IStorageEditor PutValue(string key, long[] values)
             {
-                Parent.longArrays.AddOrReplace(EscapeString(key), values);
+                Parent._longArrays.AddOrReplace(EscapeString(key), values);
                 return this;
             }
 
             public IStorageEditor PutValue(string key, float[] values)
             {
-                Parent.floatArrays.AddOrReplace(EscapeString(key), values);
+                Parent._floatArrays.AddOrReplace(EscapeString(key), values);
                 return this;
             }
 
             public IStorageEditor PutValue(string key, byte[] values)
             {
-                Parent.raws.AddOrReplace(EscapeString(key), values);
+                Parent._raws.AddOrReplace(EscapeString(key), values);
                 return this;
             }
 
@@ -153,52 +153,78 @@ namespace Zintom.StorageFacility
                 using (StreamWriter writer = new StreamWriter(file, Encoding.UTF8))
                 {
                     // Write single value objects to file:
-                    WriteKeyPairValues(Parent.strings, null);
-                    WriteKeyPairValues(Parent.booleans, 'B');
-                    WriteKeyPairValues(Parent.integers, 'I');
-                    WriteKeyPairValues(Parent.longs, 'L');
-                    WriteKeyPairValues(Parent.floats, 'F');
+                    WriteKeyPairValues(Parent._strings, 'S');
+                    WriteKeyPairValues(Parent._booleans, 'B');
+                    WriteKeyPairValues(Parent._integers, 'I');
+                    WriteKeyPairValues(Parent._longs, 'L');
+                    WriteKeyPairValues(Parent._floats, 'F');
+
+                    // Write all Arrays to file.
+                    WriteArray(Parent._stringArrays, 'S');
+                    WriteArray(Parent._integerArrays, 'I');
+                    WriteArray(Parent._longArrays, 'L');
+                    WriteArray(Parent._floatArrays, 'F');
+
+                    // Write raws
+                    foreach (var name in Parent._raws.Keys)
+                    {
+                        string value = Convert.ToBase64String(Parent._raws[name]);
+
+                        writer.Write(TokenStrings.StringEnclosure +
+                                     name +
+                                     TokenStrings.StringEnclosure +
+                                     TokenStrings.AssignmentOperator +
+                                     "RAW<" + Convert.ToString(value.Length, 16) + ">" +
+                                     TokenStrings.StringEnclosure +
+                                     value +
+                                     TokenStrings.StringEnclosure +
+                                     TokenStrings.ObjectTerminator +
+                                     (OutputOptimizedForReading ? "\n" : ""));
+                    }
 
                     void WriteKeyPairValues<TValue>(Dictionary<string, TValue> keyValuePairs, char? typeShortHand)
                     {
                         foreach (var key in keyValuePairs.Keys)
                         {
-                            writer.Write("\"" + key + "\"" + ":" + typeShortHand + "\"" + keyValuePairs[key] + "\";" + (OutputOptimizedForReading ? "\n" : ""));
+                            writer.Write(TokenStrings.StringEnclosure +
+                                         key +
+                                         TokenStrings.StringEnclosure +
+                                         TokenStrings.AssignmentOperator +
+                                         typeShortHand +
+                                         TokenStrings.StringEnclosure +
+                                         keyValuePairs[key] +
+                                         TokenStrings.StringEnclosure +
+                                         TokenStrings.ObjectTerminator +
+                                         (OutputOptimizedForReading ? "\n" : ""));
                         }
                     }
-
-                    // Write all Arrays to file.
-                    WriteArray(Parent.stringArrays, null);
-                    WriteArray(Parent.integerArrays, 'I');
-                    WriteArray(Parent.longArrays, 'L');
-                    WriteArray(Parent.floatArrays, 'F');
 
                     void WriteArray<TValue>(Dictionary<string, TValue[]> keyValuePairs, char? typeShortHand)
                     {
                         foreach (var arrayName in keyValuePairs.Keys)
                         {
                             StringBuilder arrayBuilder = new StringBuilder();
-                            arrayBuilder.Append("\"" + arrayName + "\"" + "::" + typeShortHand);
+                            arrayBuilder.Append(TokenStrings.StringEnclosure + 
+                                                arrayName +
+                                                TokenStrings.StringEnclosure +
+                                                TokenStrings.ArrayAssignmentOperator + 
+                                                typeShortHand);
+
                             foreach (var value in keyValuePairs[arrayName])
                             {
-                                arrayBuilder.Append("\"" + value + "\",");
+                                arrayBuilder.Append(TokenStrings.StringEnclosure + 
+                                                    value + 
+                                                    TokenStrings.StringEnclosure + 
+                                                    TokenStrings.Seperator);
                             }
 
                             // Overwrite the final 'seperator' at the end of the array builder.
-                            arrayBuilder.Remove(arrayBuilder.Length - 1, 1);
+                            arrayBuilder.Remove(arrayBuilder.Length - TokenStrings.Seperator.Length, TokenStrings.Seperator.Length);
                             // Append object terminator
-                            arrayBuilder.Append(";" + (OutputOptimizedForReading ? "\n" : ""));
+                            arrayBuilder.Append(TokenStrings.ObjectTerminator);
                             // Write to file.
-                            writer.Write(arrayBuilder.ToString());
+                            writer.Write(arrayBuilder.ToString() + (OutputOptimizedForReading ? "\n" : ""));
                         }
-                    }
-
-                    // Write raws
-                    foreach (var name in Parent.raws.Keys)
-                    {
-                        string value = Convert.ToBase64String(Parent.raws[name]);
-
-                        writer.Write("\"" + name + "\"" + "::" + "RAW<" + Convert.ToString(value.Length, 16) + ">\"" + value + "\";" + (OutputOptimizedForReading ? "\n" : ""));
                     }
                 }
                 return this;
@@ -208,18 +234,18 @@ namespace Zintom.StorageFacility
             {
                 if (!confirmWipe) return this;
 
-                Parent.strings.Clear();
-                Parent.booleans.Clear();
-                Parent.integers.Clear();
-                Parent.longs.Clear();
-                Parent.floats.Clear();
+                Parent._strings.Clear();
+                Parent._booleans.Clear();
+                Parent._integers.Clear();
+                Parent._longs.Clear();
+                Parent._floats.Clear();
 
-                Parent.stringArrays.Clear();
-                Parent.integerArrays.Clear();
-                Parent.longArrays.Clear();
-                Parent.floatArrays.Clear();
+                Parent._stringArrays.Clear();
+                Parent._integerArrays.Clear();
+                Parent._longArrays.Clear();
+                Parent._floatArrays.Clear();
 
-                Parent.raws.Clear();
+                Parent._raws.Clear();
 
                 return this;
             }

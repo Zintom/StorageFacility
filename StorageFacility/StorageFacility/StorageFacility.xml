@@ -15,14 +15,14 @@
             Removes all escape characters from the Double Quote character.
             </summary>
         </member>
-        <member name="M:Zintom.StorageFacility.Helpers.ExpectedCharIsAtIndex(System.Char[],System.Char,System.Int32)">
+        <member name="M:Zintom.StorageFacility.Helpers.ContainsAt(System.Char[],System.Char,System.Int32)">
             <summary>
-            Checks that the given <paramref name="expectedCharacter"/> is equal to to the character at the specified <paramref name="index"/>.
+            Checks that the array contains the specified <paramref name="expectedCharacter"/> at the given <paramref name="index"/>.
             </summary>
             <param name="array"></param>
             <param name="expectedCharacter"></param>
             <param name="index"></param>
-            <returns></returns>
+            <returns><b>true</b> if the given <paramref name="expectedCharacter"/> exists at the given <paramref name="index"/>, or if not, returns <b>false</b>.</returns>
         </member>
         <member name="T:Zintom.StorageFacility.Storage">
             <summary>
@@ -116,10 +116,11 @@
         </member>
         <member name="M:Zintom.StorageFacility.Storage.GetTypeFromShortHand(System.String)">
             <summary>
-            Converts the short-hand representation of a Type to its long-hand version.
+            Converts the short-hand <see cref="T:System.String"/> representation of a type to its object <see cref="T:System.Type"/> version.
             <para/>
-            For example <c>'L'</c> returns <see cref="T:System.Int64"/> and <c>'B'</c> returns <see cref="T:System.Boolean"/>.
             </summary>
+            <remarks>For example <b>F</b> returns <see cref="T:System.Single"/> and <b>B</b> returns <see cref="T:System.Boolean"/>,
+            if unrecognised, will return <see cref="T:System.String"/>.</remarks>
         </member>
         <member name="M:Zintom.StorageFacility.Storage.ChangeType``1(System.Object)">
             <summary>
@@ -131,6 +132,16 @@
             Parses a given input converting to parsable <see cref="T:Zintom.StorageFacility.Storage.Token"/>'s.
             </summary>
         </member>
+        <member name="F:Zintom.StorageFacility.Storage.Token.TType">
+            <summary>
+            This tokens type <see cref="T:Zintom.StorageFacility.Storage.TokenType"/>.
+            </summary>
+        </member>
+        <member name="F:Zintom.StorageFacility.Storage.Token.Value">
+            <summary>
+            The string value that this token holds.
+            </summary>
+        </member>
         <member name="F:Zintom.StorageFacility.Storage.TokenType.String">
             <summary>
             Represents an array of characters, i.e "hello".
@@ -138,7 +149,7 @@
         </member>
         <member name="F:Zintom.StorageFacility.Storage.TokenType.Seperator">
             <summary>
-            Represents ','
+            Represents <see cref="F:Zintom.StorageFacility.Storage.TokenStrings.Seperator"/>
             </summary>
         </member>
         <member name="F:Zintom.StorageFacility.Storage.TokenType.TypeDeclaration">
@@ -146,19 +157,19 @@
             Represents the <see cref="T:System.Type"/> stored for an assignment, i.e L(<see cref="T:System.Int64"/>), I(<see cref="T:System.Int32"/>) etc.
             </summary>
         </member>
-        <member name="F:Zintom.StorageFacility.Storage.TokenType.SingleValueAssignmentOperator">
+        <member name="F:Zintom.StorageFacility.Storage.TokenType.AssignmentOperator">
             <summary>
-            Represents ':'
+            Represents <see cref="F:Zintom.StorageFacility.Storage.TokenStrings.AssignmentOperator"/>
             </summary>
         </member>
         <member name="F:Zintom.StorageFacility.Storage.TokenType.ArrayAssignmentOperator">
             <summary>
-            Represents '::'
+            Represents <see cref="F:Zintom.StorageFacility.Storage.TokenStrings.ArrayAssignmentOperator"/>
             </summary>
         </member>
         <member name="F:Zintom.StorageFacility.Storage.TokenType.ObjectTerminator">
             <summary>
-            Represents ';'
+            Represents <see cref="F:Zintom.StorageFacility.Storage.TokenStrings.ObjectTerminator"/>
             </summary>
         </member>
         <member name="T:Zintom.StorageFacility.IStorageEditor">
