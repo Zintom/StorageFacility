@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
@@ -18,6 +19,22 @@ namespace Zintom.StorageFacility
                 dictionary.Remove(key);
 
             dictionary.Add(key, value);
+        }
+
+        /// <summary>
+        /// Adds the given <paramref name="keyValuePair"/> to the given <see cref="Dictionary{TKey, TValue}"/>
+        /// <b>if</b> <paramref name="keyValuePair"/> is <b>not</b> null.
+        /// </summary>
+        /// <returns>A boolean value representing whether the value was added or not.</returns>
+        /// <param name="key">The key of the element to add.</param>
+        /// <param name="value">The value of the element to add. Null values will not be added.</param>
+        internal static bool AddIfNotNull<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, KeyValuePair<TKey, TValue>? keyValuePair) where TKey : notnull
+        {
+            if (keyValuePair == null) return false;
+
+            dictionary.Add(keyValuePair.Value.Key, keyValuePair.Value.Value);
+
+            return true;
         }
 
         internal static string EscapeString(string input)
