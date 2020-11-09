@@ -10,6 +10,17 @@
             <para>If the key already exists, it is replaced by the new key and value provided.</para>
             </summary>
         </member>
+        <member name="M:Zintom.StorageFacility.Helpers.AddIfNotNull``2(System.Collections.Generic.Dictionary{``0,``1},``0,``1)">
+            <summary>
+            Adds the given key and value pair to the given <see cref="T:System.Collections.Generic.Dictionary`2"/> <b>if</b> the value is <b>not</b> <see langword="null"/>
+            </summary>
+            <returns>A <see cref="T:System.Boolean"/> value representing whether the value was added or not.</returns>
+            <param name="key">The key of the element to add.</param>
+            <param name="value">The value of the element to add. Null values will not be added.</param>
+        </member>
+        <member name="M:Zintom.StorageFacility.Helpers.AddIfNotNull``2(System.Collections.Generic.Dictionary{``0,``1},System.Nullable{System.Collections.Generic.KeyValuePair{``0,``1}})">
+            <inheritdoc cref="M:Zintom.StorageFacility.Helpers.AddIfNotNull``2(System.Collections.Generic.Dictionary{``0,``1},``0,``1)"/>
+        </member>
         <member name="M:Zintom.StorageFacility.Helpers.UnEscapeString(System.String)">
             <summary>
             Removes all escape characters from the Double Quote character.
@@ -23,6 +34,31 @@
             <param name="expectedCharacter"></param>
             <param name="index"></param>
             <returns><b>true</b> if the given <paramref name="expectedCharacter"/> exists at the given <paramref name="index"/>, or if not, returns <b>false</b>.</returns>
+        </member>
+        <member name="M:Zintom.StorageFacility.Helpers.MatchesSequence``1(System.Span{``0},System.Span{``0})">
+            <summary>
+            Determines whether the first sequence of <see cref="T:System.Span`1"/> matches
+            the second sequence of <see cref="T:System.Span`1"/> exactly.
+            </summary>
+            <param name="sequence">The sequence to test.</param>
+            <returns>If the first sequence exactly matches the second, returns <see langword="true"/>, otherwise <see langword="false"/>.</returns>
+        </member>
+        <member name="M:Zintom.StorageFacility.Helpers.FollowsRecurringSequence``1(System.Span{``0},System.Span{``0})">
+            <summary>
+            Determines whether the given sequence of <see cref="T:System.Span`1"/> follows
+            the given recurring sequence of <see cref="T:System.Span`1"/> exactly.
+            </summary>
+            <param name="recurringSequence">The template recurring sequence.</param>
+            <param name="sequenceToMatch">The sequence to test.</param>
+            <returns>If the given <paramref name="sequenceToMatch"/> exactly follows the given <paramref name="recurringSequence"/>, returns <see langword="true"/>, otherwise <see langword="false"/>.</returns>
+        </member>
+        <member name="M:Zintom.StorageFacility.Helpers.ChangeElementType``1(System.Object[])">
+            <summary>
+            Changes the <see cref="T:System.Type"/> of each of the source array elements to that of <typeparamref name="TTargetType"/>.
+            </summary>
+            <typeparam name="TTargetType">The <see cref="T:System.Type"/> that the array items are to be converted to.</typeparam>
+            <param name="sourceArray"></param>
+            <returns>A new <typeparamref name="TTargetType"/> array.</returns>
         </member>
         <member name="T:Zintom.StorageFacility.Storage">
             <summary>
@@ -111,7 +147,7 @@
         </member>
         <member name="M:Zintom.StorageFacility.Storage.DisplayLoadedValues">
             <summary>
-            Displays all the loaded Storage values in the console log.
+            Displays all the loaded values in the console log.
             </summary>
         </member>
         <member name="M:Zintom.StorageFacility.Storage.GetTypeFromShortHand(System.String)">
@@ -226,6 +262,24 @@
             Wipes all keys/values from this <see cref="T:Zintom.StorageFacility.Storage"/>.
             <para><c>confirmWipe</c> must be set to <c>true</c> in order for this method to execute, it will return immediately if set to <c>false</c>.</para>
             </summary>
+        </member>
+        <member name="T:Zintom.StorageFacility.IRepresent`1">
+            <summary>
+            An object may not be equal but may still <b>'represent'</b> another object.
+            For example, two boxes may differ in content, but on the outside still represent a 'box'.
+            </summary>
+            <remarks>Implement this interface to show the intent that "these two objects are not equal but represent the same or similar thing".
+            <para>Not the same as <see cref="T:System.Type"/> because the <c>Represents(T obj)</c> method transcends the restrictions of <see cref="T:System.Type"/>, 
+            two objects of completely unrelated Type can represent the same thing.</para></remarks>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:Zintom.StorageFacility.IRepresent`1.Represents(`0)">
+            <summary>
+            Determines whether the specified object <b>represents</b> the current object.
+            </summary>
+            <remarks>An object may not be equal but may still <b>'represent'</b> another object.
+            For example, two boxes may differ in content, but on the outside still represent a 'box'.</remarks>
+            <returns><b>true</b> if the specified object represents the current object; otherwise, <b>false</b>.</returns>
         </member>
     </members>
 </doc>
