@@ -10,6 +10,8 @@ namespace DemoApplication
         {
             Storage storage = Storage.GetStorage("DemoApp.dat");
 
+            storage.DisplayLoadedValues();
+
             var editor = storage.Edit();
 
             editor.Clear(true);
@@ -27,7 +29,7 @@ namespace DemoApplication
             editor.PutValue("number3", float.MaxValue);
             editor.PutValue("onOffSwitch", true);
 
-            editor.Commit();
+            //editor.Commit();
 
             Console.ReadKey();
         }
