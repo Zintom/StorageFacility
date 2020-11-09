@@ -63,7 +63,7 @@ namespace Zintom.StorageFacility
         IStorageEditor Clear(bool confirmWipe);
     }
 
-    public partial class Storage
+    public sealed partial class Storage
     {
 
         // The class is private so that only the Storage class can instantiate it.

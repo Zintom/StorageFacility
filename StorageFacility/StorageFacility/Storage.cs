@@ -6,7 +6,7 @@ namespace Zintom.StorageFacility
     /// <summary>
     /// A class which simplifies data storage to disk allowing for easy saving, loading and access of a key-value data structure.
     /// </summary>
-    public partial class Storage
+    public sealed partial class Storage
     {
 
         private string StoragePath = "";
