@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -8,7 +9,7 @@ using System.Text;
 
 namespace Zintom.StorageFacility
 {
-    public partial class Storage
+    public sealed partial class Storage
     {
 
         /// <summary>
@@ -21,7 +22,7 @@ namespace Zintom.StorageFacility
                 string fileContents = File.ReadAllText(path);
                 if (string.IsNullOrEmpty(fileContents))
                 {
-                    Debug.WriteLine("StorageFacility.Storage: The given storage file is empty.");
+                    Console.WriteLine("StorageFacility.Storage: The given storage file is empty.");
                     return null;
                 }
                 else
@@ -33,7 +34,7 @@ namespace Zintom.StorageFacility
             {
                 if (ex is FileNotFoundException)
                 {
-                    Debug.WriteLine("StorageFacility.Storage: The given storage file does not exist, creating now.");
+                    Console.WriteLine("StorageFacility.Storage: The given storage file does not exist, creating now.");
 
                     File.Create(path).Dispose();
                     return null;
@@ -42,7 +43,7 @@ namespace Zintom.StorageFacility
                          ex is PathTooLongException ||
                          ex is UnauthorizedAccessException)
                 {
-                    Debug.WriteLine("StorageFacility.Storage: The given path to the storage file is incorrect or inaccessible.");
+                    Console.WriteLine("StorageFacility.Storage: The given path to the storage file is incorrect or inaccessible.");
 
                     return null;
                 }
@@ -62,120 +63,196 @@ namespace Zintom.StorageFacility
 
             Token[] tokens = Tokenize(fileContents);
 
-            int index = 0;
+            int startIndex = 0;
             int selectionLength = 0;
+
+            // Define sequences to match against.
+
+            Span<Token> ValueAssignmentSequence = new[] {
+                new Token(TokenType.String, ""),
+                new Token(TokenType.AssignmentOperator, ""),
+                new Token(TokenType.TypeDeclaration, ""),
+                new Token(TokenType.String, ""),
+                new Token(TokenType.ObjectTerminator, "")
+                }.AsSpan();
+
+            Span<Token> ArrayAssignmentInitialSequence = new[] {
+                new Token(TokenType.String, ""),
+                new Token(TokenType.ArrayAssignmentOperator, ""),
+                new Token(TokenType.TypeDeclaration, "")
+                }.AsSpan();
+
+            Span<Token> ArrayItemSequence = new[] {
+                new Token(TokenType.String, ""),
+                new Token(TokenType.Seperator, "")
+                }.AsSpan();
 
             while (true)
             {
                 // Expand token span selection by one.
                 selectionLength++;
 
-                if (index >= tokens.Length)
+                if (startIndex >= tokens.Length)
                     break;
 
-                if (index + selectionLength > tokens.Length)
+                if (startIndex + selectionLength > tokens.Length)
                 {
                     Debug.WriteLine("Parser: Storage format unrecognised; its format may be out of date, or the file has been tampered with or is corrupt.");
                     break;
                 }
 
                 // The slice of tokens we are testing.
-                ReadOnlySpan<Token> tokenSequenceSpan = tokens.AsSpan(index, selectionLength);
+                Span<Token> testSequence = tokens.AsSpan(startIndex, selectionLength);
 
-                // Match assumed strings (assumed strings are those without a Type prefix, we assume these are String types).
-                //if (AddToDictionaryIfKeyPairNotNull(strings, MatchDefineAssumeStringAssignment(sequenceBuilder))) continue;
+                //
+                // New single value assignment
+                if (testSequence.MatchesSequence(ValueAssignmentSequence))
+                {
+                    string assignmentKey = testSequence[0].Value;
+                    object assignmentValue = testSequence[3].Value;
+                    Type assignmentType = GetTypeFromShortHand(testSequence[2].Value);
 
-                // Match strings
-                if (_strings.AddIfNotNull(MatchDefineValueAssignment<string>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                    if (assignmentType == typeof(string))
+                    {
+                        _strings.AddIfNotNull(assignmentKey, Helpers.UnEscapeString(assignmentValue?.ToString() ?? ""));
+                    }
+                    else if (assignmentType == typeof(bool))
+                    {
+                        _booleans.AddIfNotNull(assignmentKey, ChangeType<bool>(assignmentValue));
+                    }
+                    else if (assignmentType == typeof(int))
+                    {
+                        _integers.AddIfNotNull(assignmentKey, ChangeType<int>(assignmentValue));
+                    }
+                    else if (assignmentType == typeof(long))
+                    {
+                        _longs.AddIfNotNull(assignmentKey, ChangeType<long>(assignmentValue));
+                    }
+                    else if (assignmentType == typeof(float))
+                    {
+                        _floats.AddIfNotNull(assignmentKey, ChangeType<float>(assignmentValue));
+                    }
+                    else if (assignmentType == typeof(byte[]))
+                    {
+                        _raws.AddIfNotNull(assignmentKey, Convert.FromBase64String(assignmentValue?.ToString() ?? "FAILED"));
+                    }
 
-                // Match booleans
-                else if (_booleans.AddIfNotNull(MatchDefineValueAssignment<bool>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                    MoveToNextTokenSequence();
 
-                // Match integers
-                else if (_integers.AddIfNotNull(MatchDefineValueAssignment<int>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                    continue;
+                }
+                //
+                // New array assignment
+                else if (testSequence.Length > ArrayAssignmentInitialSequence.Length
+                    && testSequence.Slice(0, ArrayAssignmentInitialSequence.Length).MatchesSequence(ArrayAssignmentInitialSequence)
+                    && testSequence.Slice(ArrayAssignmentInitialSequence.Length, testSequence.Length - ArrayAssignmentInitialSequence.Length - 1).FollowsRecurringSequence(ArrayItemSequence)
+                    && testSequence[^1].TType == TokenType.ObjectTerminator)
+                {
+                    string assignmentKey = testSequence[0].Value;
+                    Type assignmentType = GetTypeFromShortHand(testSequence[2].Value);
 
-                // Match longs
-                else if (_longs.AddIfNotNull(MatchDefineValueAssignment<long>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                    // Get just the String and Seperator Tokens
+                    Span<Token> justItemsAndSeperators = testSequence[3..];
 
-                // Match floats
-                else if (_floats.AddIfNotNull(MatchDefineValueAssignment<float>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                    // Because justItemsAndSeperators is all the strings & all the seperators
+                    // we need to divide its length by 2 to get the number of elements.
+                    int arrayElementsCount = justItemsAndSeperators.Length / 2;
 
-                // Match raws
-                else if (_raws.AddIfNotNull(MatchDefineValueAssignment<byte[]>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                    // A new empty array of objects
+                    // ready to be filled with the items in justItemsAndSeperators
+                    object[] arrayElements = new object[arrayElementsCount];
 
-                // Match assumed string arrays
-                //else if (AddToDictionaryIfKeyPairNotNull(stringArrays, MatchDefineAssumeStringArray(sequenceBuilder))) continue;
+                    for (int i = 0; i < arrayElements.Length; i++)
+                    {
+                        string newItemValue = justItemsAndSeperators[i * 2].Value;
 
-                // Match string arrays
-                else if (_stringArrays.AddIfNotNull(MatchDefineArrayAssignment<string>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                        if (assignmentType == typeof(string))
+                            newItemValue = Helpers.UnEscapeString(newItemValue);
 
-                // Match integer arrays
-                else if (_integerArrays.AddIfNotNull(MatchDefineArrayAssignment<int>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                        arrayElements[i] = newItemValue;
+                    }
 
-                // Match long arrays
-                else if (_longArrays.AddIfNotNull(MatchDefineArrayAssignment<long>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                    // Add the newly built array to the correct dictionary.
+                    if (assignmentType == typeof(string))
+                    {
+                        _stringArrays.AddOrReplace(assignmentKey, arrayElements.ChangeElementType<string>());
+                    }
+                    else if (assignmentType == typeof(int))
+                    {
+                        _integerArrays.AddOrReplace(assignmentKey, arrayElements.ChangeElementType<int>());
+                    }
+                    else if (assignmentType == typeof(long))
+                    {
+                        _longArrays.AddOrReplace(assignmentKey, arrayElements.ChangeElementType<long>());
+                    }
+                    else if (assignmentType == typeof(float))
+                    {
+                        _floatArrays.AddOrReplace(assignmentKey, arrayElements.ChangeElementType<float>());
+                    }
 
-                // Match float arrays
-                else if (_floatArrays.AddIfNotNull(MatchDefineArrayAssignment<float>(tokenSequenceSpan))) { MoveToNextTokenSequence(); continue; }
+                    MoveToNextTokenSequence();
+
+                    continue;
+                }
 
                 void MoveToNextTokenSequence()
                 {
-                    index += selectionLength;
+                    startIndex += selectionLength;
                     selectionLength = 0;
                 }
             }
 
+#if DEBUG
             DisplayLoadedValues();
+#endif
         }
 
         /// <summary>
-        /// Displays all the loaded Storage values in the console log.
+        /// Displays all the loaded values in the console log.
         /// </summary>
-        private void DisplayLoadedValues()
+        public void DisplayLoadedValues()
         {
-            Debug.WriteLine($"▼ Storage Loaded(\"{StoragePath}\") ▼");
-
-            Debug.WriteLine($"Strings:");
+            Console.WriteLine("Strings:");
             DisplayDictionary(_strings);
 
-            Debug.WriteLine($"Booleans:");
+            Console.WriteLine("Booleans:");
             DisplayDictionary(_booleans);
 
-            Debug.WriteLine($"Integers:");
+            Console.WriteLine("Integers:");
             DisplayDictionary(_integers);
 
-            Debug.WriteLine($"Longs:");
+            Console.WriteLine("Longs:");
             DisplayDictionary(_longs);
 
-            Debug.WriteLine($"Floating Point Numbers:");
+            Console.WriteLine("Floating Point Numbers:");
             DisplayDictionary(_floats);
 
-            Debug.WriteLine($"Raws (encoded in Base64 for brevity):");
+            Console.WriteLine("Raws (encoded in Base64 for brevity):");
             foreach (var key in _raws.Keys)
             {
                 if (_raws[key].Length < 2048)
-                    Debug.WriteLine(" '" + key + "' => '" + Convert.ToBase64String(_raws[key]) + "'");
+                    Console.WriteLine(" '" + key + "' => '" + Convert.ToBase64String(_raws[key]) + "'");
                 else
-                    Debug.WriteLine(" '" + key + "' => Value size exceeds safe display limit(" + _raws[key].Length + ")!");
+                    Console.WriteLine(" '" + key + "' => Value size exceeds safe display limit(" + _raws[key].Length + ")!");
             }
 
-            Debug.WriteLine($"String arrays:");
+            Console.WriteLine("String arrays:");
             DisplayArray(_stringArrays);
 
-            Debug.WriteLine($"Integer arrays:");
+            Console.WriteLine("Integer arrays:");
             DisplayArray(_integerArrays);
 
-            Debug.WriteLine($"Long arrays:");
+            Console.WriteLine("Long arrays:");
             DisplayArray(_longArrays);
 
-            Debug.WriteLine($"Float arrays:");
+            Console.WriteLine("Float arrays:");
             DisplayArray(_floatArrays);
 
             static void DisplayDictionary<TKey, TValue>(Dictionary<TKey, TValue> pairs) where TKey : notnull
             {
                 foreach (var key in pairs.Keys)
                 {
-                    Debug.WriteLine(" '" + key + "' => '" + pairs[key] + "'");
+                    Console.WriteLine(" '" + key + "' => '" + pairs[key] + "'");
                 }
             }
 
@@ -183,94 +260,80 @@ namespace Zintom.StorageFacility
             {
                 foreach (var key in keyValuePairs.Keys)
                 {
-                    Debug.Write(" '" + key + "' => { ");
+                    Console.Write(" '" + key + "' => { ");
 
                     bool firstValue = true;
                     foreach (var value in keyValuePairs[key])
                     {
-                        if (!firstValue) Debug.Write(", ");
+                        if (!firstValue) Console.Write(", ");
                         firstValue = false;
 
-                        Debug.Write("'" + value + "'");
+                        Console.Write("'" + value + "'");
                     }
 
-                    Debug.WriteLine(" }");
+                    Console.WriteLine(" }");
                 }
             }
-
         }
 
         ///// <summary>
         ///// Displays all the loaded Storage values in the console log.
         ///// </summary>
-        //public IEnumerable<(Type type, string value)> DumpLoadedValues()
+        //public IEnumerable<(Type type, string key, string value)> DumpLoadedValues()
         //{
         //    Debug.WriteLine($"▼ Storage Loaded(\"{StoragePath}\") ▼");
 
         //    Debug.WriteLine($"Strings:");
-        //    foreach (var output in DisplayDictionary(strings)) yield return output;
+        //    foreach (var output in DisplayDictionary(_strings)) yield return output;
 
         //    Debug.WriteLine($"Booleans:");
-        //    DisplayDictionary(booleans);
+        //    foreach (var output in DisplayDictionary(_booleans)) yield return output;
 
         //    Debug.WriteLine($"Integers:");
-        //    DisplayDictionary(integers);
+        //    foreach (var output in DisplayDictionary(_integers)) yield return output;
 
         //    Debug.WriteLine($"Longs:");
-        //    DisplayDictionary(longs);
+        //    foreach (var output in DisplayDictionary(_longs)) yield return output;
 
         //    Debug.WriteLine($"Floating Point Numbers:");
-        //    DisplayDictionary(floats);
+        //    foreach (var output in DisplayDictionary(_floats)) yield return output;
 
         //    Debug.WriteLine($"Raws (encoded in Base64 for brevity):");
-        //    foreach (var key in raws.Keys)
+        //    foreach (var key in _raws.Keys)
         //    {
-        //        if (raws[key].Length < 2048)
-        //            Debug.WriteLine(" '" + key + "' => '" + Convert.ToBase64String(raws[key]) + "'");
+        //        if (_raws[key].Length < 2048)
+        //            Debug.WriteLine(" '" + key + "' => '" + Convert.ToBase64String(_raws[key]) + "'");
         //        else
-        //            Debug.WriteLine(" '" + key + "' => Value size exceeds safe display limit(" + raws[key].Length + ")!");
+        //            Debug.WriteLine(" '" + key + "' => Value size exceeds safe display limit(" + _raws[key].Length + ")!");
         //    }
 
         //    Debug.WriteLine($"String arrays:");
-        //    DisplayArray(stringArrays);
+        //    foreach (var output in DisplayArray(_stringArrays)) yield return output;
 
         //    Debug.WriteLine($"Integer arrays:");
-        //    DisplayArray(integerArrays);
+        //    foreach (var output in DisplayArray(_integerArrays)) yield return output;
 
         //    Debug.WriteLine($"Long arrays:");
-        //    DisplayArray(longArrays);
+        //    foreach (var output in DisplayArray(_longArrays)) yield return output;
 
         //    Debug.WriteLine($"Float arrays:");
-        //    DisplayArray(floatArrays);
+        //    foreach (var output in DisplayArray(_floatArrays)) yield return output;
 
-        //    static IEnumerable<(Type, string)> DisplayDictionary<TKey, TValue>(Dictionary<TKey, TValue> pairs) where TKey : notnull
+        //    static IEnumerable<(Type type, string key, string value)> DisplayDictionary<TKey, TValue>(Dictionary<TKey, TValue> pairs) where TKey : notnull
         //    {
         //        foreach (var key in pairs.Keys)
         //        {
-        //            yield return (key.GetType(), pairs[key]!.ToString() ?? "");
-        //            //Debug.WriteLine(" '" + key + "' => '" + pairs[key] + "'");
+        //            yield return (key.GetType(), key?.ToString() ?? "", pairs[key]?.ToString() ?? "");
         //        }
         //    }
 
-        //    static void DisplayArray<TValue>(Dictionary<string, TValue[]> keyValuePairs)
+        //    static IEnumerable<(Type type, string key, TValue[] value)> DisplayArray<TKey, TValue>(Dictionary<TKey, TValue[]> pairs) where TKey : notnull
         //    {
-        //        foreach (var key in keyValuePairs.Keys)
+        //        foreach (var key in pairs.Keys)
         //        {
-        //            Debug.Write(" '" + key + "' => { ");
-
-        //            bool firstValue = true;
-        //            foreach (var value in keyValuePairs[key])
-        //            {
-        //                if (!firstValue) Debug.Write(", ");
-        //                firstValue = false;
-
-        //                Debug.Write("'" + value + "'");
-        //            }
-
-        //            Debug.WriteLine(" }");
+        //            yield return (typeof(TKey), key?.ToString() ?? "", pairs[key]);
         //        }
         //    }
-
         //}
 
         //[Obsolete("This will be removed in future versions, strings are now fully qualified by default")]
@@ -318,77 +381,77 @@ namespace Zintom.StorageFacility
         //    return new KeyValuePair<string, byte[]>(tokens[0].Value, Convert.FromBase64String(tokens[3].Value));
         //}
 
-        static KeyValuePair<string, T>? MatchDefineValueAssignment<T>(ReadOnlySpan<Token> tokens)
-        {
-            if (tokens.Length != 5
-                || tokens[0].TType != TokenType.String
-                || tokens[1].TType != TokenType.AssignmentOperator
-                || tokens[2].TType != TokenType.TypeDeclaration
-                || GetTypeFromShortHand(tokens[2].Value) != typeof(T)
-                || tokens[3].TType != TokenType.String
-                || tokens[4].TType != TokenType.ObjectTerminator) return null;
+        //static KeyValuePair<string, T>? MatchDefineValueAssignment<T>(Span<Token> tokens)
+        //{
+        //    if (tokens.Length != 5
+        //        || tokens[0].TType != TokenType.String
+        //        || tokens[1].TType != TokenType.AssignmentOperator
+        //        || tokens[2].TType != TokenType.TypeDeclaration
+        //        || GetTypeFromShortHand(tokens[2].Value) != typeof(T)
+        //        || tokens[3].TType != TokenType.String
+        //        || tokens[4].TType != TokenType.ObjectTerminator) return null;
 
-            if (typeof(T) == typeof(string)) // String
-            {
-                // Unescape string before return to caller.
-                return new KeyValuePair<string, T>(tokens[0].Value, ChangeType<T>(Helpers.UnEscapeString(ChangeType<string>(tokens[3].Value))));
-            }
-            else if (typeof(T) == typeof(byte[])) // Raws
-            {
-                // Convert from Base64 to byte[] before return to caller.
-                return new KeyValuePair<string, T>(tokens[0].Value, ChangeType<T>(Convert.FromBase64String(tokens[3].Value)));
-            }
-            else
-            {
-                return new KeyValuePair<string, T>(tokens[0].Value, ChangeType<T>(tokens[3].Value));
-            }
-        }
+        //    if (typeof(T) == typeof(string)) // String
+        //    {
+        //        // Unescape string before return to caller.
+        //        return new KeyValuePair<string, T>(tokens[0].Value, ChangeType<T>(Helpers.UnEscapeString(ChangeType<string>(tokens[3].Value))));
+        //    }
+        //    else if (typeof(T) == typeof(byte[])) // Raws
+        //    {
+        //        // Convert from Base64 to byte[] before return to caller.
+        //        return new KeyValuePair<string, T>(tokens[0].Value, ChangeType<T>(Convert.FromBase64String(tokens[3].Value)));
+        //    }
+        //    else
+        //    {
+        //        return new KeyValuePair<string, T>(tokens[0].Value, ChangeType<T>(tokens[3].Value));
+        //    }
+        //}
 
-        static KeyValuePair<string, T[]>? MatchDefineArrayAssignment<T>(ReadOnlySpan<Token> tokens)
-        {
-            if (tokens.Length < 4) return null;
-            if (tokens[0].TType != TokenType.String) return null;
-            if (tokens[1].TType != TokenType.ArrayAssignmentOperator) return null;
+        //static KeyValuePair<string, T[]>? MatchDefineArrayAssignment<T>(ReadOnlySpan<Token> tokens)
+        //{
+        //    if (tokens.Length < 4) return null;
+        //    if (tokens[0].TType != TokenType.String) return null;
+        //    if (tokens[1].TType != TokenType.ArrayAssignmentOperator) return null;
 
-            if (tokens[2].TType != TokenType.TypeDeclaration) return null;
-            if (GetTypeFromShortHand(tokens[2].Value) != typeof(T)) return null;
+        //    if (tokens[2].TType != TokenType.TypeDeclaration) return null;
+        //    if (GetTypeFromShortHand(tokens[2].Value) != typeof(T)) return null;
 
-            List<T> arrayObjects = new List<T>();
-            arrayObjects.Add(ChangeType<T>(tokens[3].Value)); // Add first value
+        //    List<T> arrayObjects = new List<T>();
+        //    arrayObjects.Add(ChangeType<T>(tokens[3].Value)); // Add first value
 
-            for (int i = 3; i < tokens.Length; i++)
-            {
-                Token currentToken = tokens[i];
-                TokenType previousTokenType = tokens[i - 1].TType;
+        //    for (int i = 3; i < tokens.Length; i++)
+        //    {
+        //        Token currentToken = tokens[i];
+        //        TokenType previousTokenType = tokens[i - 1].TType;
 
-                if (previousTokenType == TokenType.Seperator)
-                {
-                    if (currentToken.TType == TokenType.String)
-                    {
-                        arrayObjects.Add(ChangeType<T>(currentToken.Value));
-                    }
-                    else
-                    {
-                        // Fail
-                        Debug.WriteLine($"MatchDefineArray Failed, expected String following ','({TokenType.Seperator}), found {currentToken.TType}.");
-                        return null;
-                    }
-                }
-                else if (previousTokenType == TokenType.String)
-                {
-                    if (currentToken.TType == TokenType.ObjectTerminator)
-                    {
-                        return new KeyValuePair<string, T[]>(tokens[0].Value, arrayObjects.ToArray());
-                    }
-                    else if (currentToken.TType != TokenType.Seperator)
-                    {
-                        Debug.WriteLine($"MatchDefineArray Failed, expected ','({TokenType.Seperator}) or ';'({TokenType.ObjectTerminator}), found {currentToken.TType}.");
-                    }
-                }
-            }
+        //        if (previousTokenType == TokenType.Seperator)
+        //        {
+        //            if (currentToken.TType == TokenType.String)
+        //            {
+        //                arrayObjects.Add(ChangeType<T>(currentToken.Value));
+        //            }
+        //            else
+        //            {
+        //                // Fail
+        //                Debug.WriteLine($"MatchDefineArray Failed, expected String following ','({TokenType.Seperator}), found {currentToken.TType}.");
+        //                return null;
+        //            }
+        //        }
+        //        else if (previousTokenType == TokenType.String)
+        //        {
+        //            if (currentToken.TType == TokenType.ObjectTerminator)
+        //            {
+        //                return new KeyValuePair<string, T[]>(tokens[0].Value, arrayObjects.ToArray());
+        //            }
+        //            else if (currentToken.TType != TokenType.Seperator)
+        //            {
+        //                Debug.WriteLine($"MatchDefineArray Failed, expected ','({TokenType.Seperator}) or ';'({TokenType.ObjectTerminator}), found {currentToken.TType}.");
+        //            }
+        //        }
+        //    }
 
-            return null;
-        }
+        //    return null;
+        //}
 
         /// <summary>
         /// Converts the short-hand <see cref="string"/> representation of a type to its object <see cref="Type"/> version.
@@ -577,7 +640,7 @@ namespace Zintom.StorageFacility
             return tokens.ToArray();
         }
 
-        private sealed class Token
+        private sealed class Token : IRepresent<Token>
         {
 
             /// <summary>
@@ -595,6 +658,59 @@ namespace Zintom.StorageFacility
                 TType = type;
                 Value = value;
             }
+
+            ///// <summary>
+            ///// Determines whether the specified sequences are identical, judged by their <see cref="TType"/>
+            ///// </summary>
+            ///// <returns>If all sequence member <see cref="TType"/>'s are identical, returns <b>true</b>, if not, returns <b>false</b>.</returns>
+            //public static bool SequenceEquals(in Span<Token> sequence1, in Span<Token> sequence2)
+            //{
+            //    if (sequence1.Length != sequence2.Length) return false;
+
+            //    for (int i = 0; i < sequence1.Length; i++)
+            //    {
+            //        if (sequence1[i].TType != sequence2[i].TType) return false;
+            //    }
+
+            //    return true;
+            //}
+
+            public bool Represents(Token obj)
+            {
+                return obj?.TType == TType;
+            }
+
+            ///// <summary>
+            ///// Determines whether the given <paramref name="sequenceToMatch"/> follows
+            ///// the given recurring sequence exactly.
+            ///// </summary>
+            ///// <param name="recurringSequence">The template recurring sequence.</param>
+            ///// <param name="sequenceToMatch">The sequence to test.</param>
+            ///// <returns>If the given <paramref name="sequenceToMatch"/> exactly follows the given <paramref name="recurringSequence"/>, returns <b>true</b>, otherwise <b>false</b>.</returns>
+            //public static bool FollowsRecurringSequence(this Span<Token> sequenceToMatch, Span<Token> recurringSequence)
+            //{
+            //    //if (sequenceToMatch.Length < recurringSequence.Length) return false;
+
+            //    for(int i = 0; i < sequenceToMatch.Length; i++)
+            //    {
+            //        if (sequenceToMatch[i].TType != recurringSequence[i % recurringSequence.Length].TType) return false;
+            //    }
+
+            //    return true;
+            //}
+
+            //public override bool Equals(object? obj)
+            //{
+            //    if (obj == null) return base.Equals(obj);
+
+            //    var objBox = (Token)obj;
+            //    return objBox.TType == TType && objBox.Value == Value;
+            //}
+
+            //public override int GetHashCode()
+            //{
+            //    return Tuple.Create(TType, Value).GetHashCode();
+            //}
         }
 
         private enum TokenizerState
@@ -645,6 +761,24 @@ namespace Zintom.StorageFacility
             internal const string ObjectTerminator = ";";
         }
 
+    }
+    /// <summary>
+    /// An object may not be equal but may still <b>'represent'</b> another object.
+    /// For example, two boxes may differ in content, but on the outside still represent a 'box'.
+    /// </summary>
+    /// <remarks>Implement this interface to show the intent that "these two objects are not equal but represent the same or similar thing".
+    /// <para>Not the same as <see cref="Type"/> because the <c>Represents(T obj)</c> method transcends the restrictions of <see cref="Type"/>, 
+    /// two objects of completely unrelated Type can represent the same thing.</para></remarks>
+    /// <typeparam name="T"></typeparam>
+    public interface IRepresent<T>
+    {
+        /// <summary>
+        /// Determines whether the specified object <b>represents</b> the current object.
+        /// </summary>
+        /// <remarks>An object may not be equal but may still <b>'represent'</b> another object.
+        /// For example, two boxes may differ in content, but on the outside still represent a 'box'.</remarks>
+        /// <returns><b>true</b> if the specified object represents the current object; otherwise, <b>false</b>.</returns>
+        bool Represents(T obj);
     }
 
     public sealed class InvalidTokenException : Exception
