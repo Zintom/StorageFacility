@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -22,17 +23,26 @@ namespace Zintom.StorageFacility
         }
 
         /// <summary>
-        /// Adds the given <paramref name="keyValuePair"/> to the given <see cref="Dictionary{TKey, TValue}"/>
-        /// <b>if</b> <paramref name="keyValuePair"/> is <b>not</b> null.
+        /// Adds the given key and value pair to the given <see cref="Dictionary{TKey, TValue}"/> <b>if</b> the value is <b>not</b> <see langword="null"/>
         /// </summary>
-        /// <returns>A boolean value representing whether the value was added or not.</returns>
+        /// <returns>A <see cref="bool"/> value representing whether the value was added or not.</returns>
         /// <param name="key">The key of the element to add.</param>
         /// <param name="value">The value of the element to add. Null values will not be added.</param>
+        internal static bool AddIfNotNull<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value) where TKey : notnull
+        {
+            if (value == null) return false;
+
+            dictionary.AddOrReplace(key, value);
+
+            return true;
+        }
+
+        /// <inheritdoc cref="AddIfNotNull{TKey, TValue}(Dictionary{TKey, TValue}, TKey, TValue)"/>
         internal static bool AddIfNotNull<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, KeyValuePair<TKey, TValue>? keyValuePair) where TKey : notnull
         {
             if (keyValuePair == null) return false;
 
-            dictionary.Add(keyValuePair.Value.Key, keyValuePair.Value.Value);
+            dictionary.AddOrReplace(keyValuePair.Value.Key, keyValuePair.Value.Value);
 
             return true;
         }
@@ -81,7 +91,6 @@ namespace Zintom.StorageFacility
             return unescaped.ToString();
         }
 
-
         /// <summary>
         /// Checks that the array contains the specified <paramref name="expectedCharacter"/> at the given <paramref name="index"/>.
         /// </summary>
@@ -94,5 +103,57 @@ namespace Zintom.StorageFacility
             return index > 0 && index < array.Length && array[index] == expectedCharacter;
         }
 
+        /// <summary>
+        /// Determines whether the first sequence of <see cref="Span{T}"/> matches
+        /// the second sequence of <see cref="Span{T}"/> exactly.
+        /// </summary>
+        /// <param name="sequence">The sequence to test.</param>
+        /// <returns>If the first sequence exactly matches the second, returns <see langword="true"/>, otherwise <see langword="false"/>.</returns>
+        public static bool MatchesSequence<T>(this Span<T> @this, Span<T> sequence) where T : IRepresent<T>
+        {
+            if (@this.Length != sequence.Length) return false;
+
+            for (int i = 0; i < @this.Length; i++)
+            {
+                if (!@this[i].Represents(sequence[i])) return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Determines whether the given sequence of <see cref="Span{T}"/> follows
+        /// the given recurring sequence of <see cref="Span{T}"/> exactly.
+        /// </summary>
+        /// <param name="recurringSequence">The template recurring sequence.</param>
+        /// <param name="sequenceToMatch">The sequence to test.</param>
+        /// <returns>If the given <paramref name="sequenceToMatch"/> exactly follows the given <paramref name="recurringSequence"/>, returns <see langword="true"/>, otherwise <see langword="false"/>.</returns>
+        public static bool FollowsRecurringSequence<T>(this Span<T> sequenceToMatch, Span<T> recurringSequence) where T : IRepresent<T>
+        {
+            for (int i = 0; i < sequenceToMatch.Length; i++)
+            {
+                if (!sequenceToMatch[i]!.Represents(recurringSequence[i % recurringSequence.Length])) return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Changes the <see cref="Type"/> of each of the source array elements to that of <typeparamref name="TTargetType"/>.
+        /// </summary>
+        /// <typeparam name="TTargetType">The <see cref="Type"/> that the array items are to be converted to.</typeparam>
+        /// <param name="sourceArray"></param>
+        /// <returns>A new <typeparamref name="TTargetType"/> array.</returns>
+        public static TTargetType[] ChangeElementType<TTargetType>(this object[] sourceArray)
+        {
+            TTargetType[] outputArray = new TTargetType[sourceArray.Length];
+
+            for (int i = 0; i < outputArray.Length; i++)
+            {
+                outputArray[i] = (TTargetType)Convert.ChangeType(sourceArray[i], typeof(TTargetType), CultureInfo.InvariantCulture);
+            }
+
+            return outputArray;
+        }
     }
 }
