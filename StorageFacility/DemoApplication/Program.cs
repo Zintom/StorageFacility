@@ -29,7 +29,7 @@ namespace DemoApplication
             editor.PutValue("number3", float.MaxValue);
             editor.PutValue("onOffSwitch", true);
 
-            //editor.Commit();
+            editor.Commit();
 
             Console.ReadKey();
         }
