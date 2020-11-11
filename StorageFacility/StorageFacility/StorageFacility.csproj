@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>Zintom.StorageFacility</RootNamespace>
-    <Version>1.3.2</Version>
-    <AssemblyVersion>1.3.3.0</AssemblyVersion>
+    <Version>1.3.4</Version>
+    <AssemblyVersion>1.3.4.0</AssemblyVersion>
     <Description>An API which simplifies data storage to disk allowing for easy saving, loading and access of a key-value data structure.
 
 Attempts to mimic the functionality and syntax of Androids SharedPreferences.</Description>
@@ -14,24 +14,21 @@ Attempts to mimic the functionality and syntax of Androids SharedPreferences.</D
     <Nullable>enable</Nullable>
     <PackageProjectUrl>https://github.com/Zintom/StorageFacility</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Zintom/StorageFacility</RepositoryUrl>
-    <PackageTags>Data Storage Settings SharedPreferences Preferences</PackageTags>
+    <PackageTags>Data Storage Settings SharedPreferences Preferences .net5 dotnet5</PackageTags>
     <NeutralLanguage>en</NeutralLanguage>
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageReleaseNotes></PackageReleaseNotes>
-    <FileVersion>1.3.3.0</FileVersion>
+    <PackageReleaseNotes>.Net 5 support!
+
+Significantly improved parser speed (over 2x performance)
+
+Breaking changes, file syntax has changed slightly meaning that 1.3.2 and below are incompatible.</PackageReleaseNotes>
+    <FileVersion>1.3.4.0</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DocumentationFile>C:\Users\Tom\Documents\GitHub\StorageFacility\StorageFacility\StorageFacility\StorageFacility.xml</DocumentationFile>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.1">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
 
   <ItemGroup>
     <None Include="..\..\LICENSE">
