@@ -126,13 +126,23 @@ namespace Zintom.StorageFacility
         }
 
         /// <summary>
-        /// Returns an <see cref="IStorageEditor"/> which can be used to modify the values that this storage manages.
+        /// Gets the <see cref="IStorageEditor"/> for this <see cref="Storage"/>, which can be used to modify the values that this storage manages.
+        /// </summary>
+        /// <remarks>
+        /// The returned <see cref="IStorageEditor"/> persists for the life-time of this <see cref="Storage"/> object and can be called up through multiple calls to <c>Edit()</c>,
+        /// the object returned is an identical reference to the underlying editor.
         /// <para/>
         /// You must call <see cref="IStorageEditor.Commit"/> to apply the changes to disk.
-        /// </summary>
+        /// </remarks>
+        /// 
         /// <param name="outputOptimizedForReading">If true, the editor should try and optimize the output file for reading, using new-lines where appropriate.</param>
         public IStorageEditor Edit(bool outputOptimizedForReading = true)
         {
+            // If the editor is not null, skip the lock code as the editor is definitely not null
+            // and is only ever modified by this block so we can guarantee
+            // it will never turn null.
+            if (_editor != null) return _editor;
+
             // Only allow one editor to exist at one time.
             lock (_editorLocker)
             {
