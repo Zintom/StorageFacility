@@ -201,10 +201,6 @@ namespace Zintom.StorageFacility
                     selectionLength = 0;
                 }
             }
-
-#if DEBUG
-            DisplayLoadedValues();
-#endif
         }
 
         /// <summary>
