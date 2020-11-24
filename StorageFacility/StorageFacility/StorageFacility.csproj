@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>Zintom.StorageFacility</RootNamespace>
-    <Version>1.3.4</Version>
-    <AssemblyVersion>1.3.4.0</AssemblyVersion>
+    <Version>1.3.5</Version>
+    <AssemblyVersion>1.3.5.0</AssemblyVersion>
     <Description>An API which simplifies data storage to disk allowing for easy saving, loading and access of a key-value data structure.
 
 Attempts to mimic the functionality and syntax of Androids SharedPreferences.</Description>
@@ -18,12 +18,8 @@ Attempts to mimic the functionality and syntax of Androids SharedPreferences.</D
     <NeutralLanguage>en</NeutralLanguage>
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageReleaseNotes>.Net 5 support!
-
-Significantly improved parser speed (over 2x performance)
-
-Breaking changes, file syntax has changed slightly meaning that 1.3.2 and below are incompatible.</PackageReleaseNotes>
-    <FileVersion>1.3.4.0</FileVersion>
+    <PackageReleaseNotes>Improved performance of Edit()</PackageReleaseNotes>
+    <FileVersion>1.3.5.0</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
