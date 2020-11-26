@@ -134,7 +134,6 @@ namespace Zintom.StorageFacility
         /// <para/>
         /// You must call <see cref="IStorageEditor.Commit"/> to apply the changes to disk.
         /// </remarks>
-        /// 
         /// <param name="outputOptimizedForReading">If true, the editor should try and optimize the output file for reading, using new-lines where appropriate.</param>
         public IStorageEditor Edit(bool outputOptimizedForReading = true)
         {

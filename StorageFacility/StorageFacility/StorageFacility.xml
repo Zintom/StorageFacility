@@ -124,10 +124,14 @@
         </member>
         <member name="M:Zintom.StorageFacility.Storage.Edit(System.Boolean)">
             <summary>
-            Returns an <see cref="T:Zintom.StorageFacility.IStorageEditor"/> which can be used to modify the values that this storage manages.
+            Gets the <see cref="T:Zintom.StorageFacility.IStorageEditor"/> for this <see cref="T:Zintom.StorageFacility.Storage"/>, which can be used to modify the values that this storage manages.
+            </summary>
+            <remarks>
+            The returned <see cref="T:Zintom.StorageFacility.IStorageEditor"/> persists for the life-time of this <see cref="T:Zintom.StorageFacility.Storage"/> object and can be called up through multiple calls to <c>Edit()</c>,
+            the object returned is an identical reference to the underlying editor.
             <para/>
             You must call <see cref="M:Zintom.StorageFacility.IStorageEditor.Commit"/> to apply the changes to disk.
-            </summary>
+            </remarks>
             <param name="outputOptimizedForReading">If true, the editor should try and optimize the output file for reading, using new-lines where appropriate.</param>
         </member>
         <member name="F:Zintom.StorageFacility.Storage.StorageEditor.OutputOptimizedForReading">
