@@ -149,7 +149,7 @@ namespace Zintom.StorageFacility
             public IStorageEditor Commit()
             {
                 // Save all Storage contents to file.
-                using (var file = File.Create(Parent.StoragePath))
+                using (var file = new FileStream(Parent.StoragePath, FileMode.OpenOrCreate, FileAccess.Write))
                 using (StreamWriter writer = new StreamWriter(file, Encoding.UTF8))
                 {
                     // Write single value objects to file:
@@ -164,6 +164,10 @@ namespace Zintom.StorageFacility
                     WriteArray(Parent._integerArrays, 'I');
                     WriteArray(Parent._longArrays, 'L');
                     WriteArray(Parent._floatArrays, 'F');
+
+                    // Set the stream length to the current position in order to truncate leftover text
+                    file.SetLength(file.Position);
+                    file.Flush();
 
                     // Write raws
                     foreach (var name in Parent._raws.Keys)
@@ -204,17 +208,17 @@ namespace Zintom.StorageFacility
                         foreach (var arrayName in keyValuePairs.Keys)
                         {
                             StringBuilder arrayBuilder = new StringBuilder();
-                            arrayBuilder.Append(TokenStrings.StringEnclosure + 
+                            arrayBuilder.Append(TokenStrings.StringEnclosure +
                                                 arrayName +
                                                 TokenStrings.StringEnclosure +
-                                                TokenStrings.ArrayAssignmentOperator + 
+                                                TokenStrings.ArrayAssignmentOperator +
                                                 typeShortHand);
 
                             foreach (var value in keyValuePairs[arrayName])
                             {
-                                arrayBuilder.Append(TokenStrings.StringEnclosure + 
-                                                    value + 
-                                                    TokenStrings.StringEnclosure + 
+                                arrayBuilder.Append(TokenStrings.StringEnclosure +
+                                                    value +
+                                                    TokenStrings.StringEnclosure +
                                                     TokenStrings.Seperator);
                             }
 
