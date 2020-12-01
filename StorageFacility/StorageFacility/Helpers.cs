@@ -32,6 +32,7 @@ namespace Zintom.StorageFacility
         /// <inheritdoc cref="GetValue{TKey, TValue}(IDictionary{TKey, TValue}, TKey, TValue)"/>
         public static TValue? GetValue<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key, TValue? defaultValue) where TKey : notnull
         {
+            // The cast to IDictionary is important otherwise the compiler will use the wrong method signature.
             return GetValue((IDictionary<TKey, TValue>)dictionary, key, defaultValue);
         }
 
