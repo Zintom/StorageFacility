@@ -29,13 +29,7 @@ namespace Zintom.StorageFacility
             }
         }
 
-        /// <summary>
-        /// Retreives a <typeparamref name="TValue"/> from the dictionary with the given <paramref name="key"/>.
-        /// </summary>
-        /// <param name="dictionary">The dictionary to search.</param>
-        /// <param name="key">The key for the value to retrieve.</param>
-        /// <param name="defaultValue">The value to return if the key does not exist.</param>
-        /// <returns>The <typeparamref name="TValue"/> for the given <paramref name="key"/>, or <paramref name="defaultValue"/> if it does not exist.</returns>
+        /// <inheritdoc cref="GetValue{TKey, TValue}(IDictionary{TKey, TValue}, TKey, TValue)"/>
         public static TValue? GetValue<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key, TValue? defaultValue) where TKey : notnull
         {
             return GetValue((IDictionary<TKey, TValue>)dictionary, key, defaultValue);
