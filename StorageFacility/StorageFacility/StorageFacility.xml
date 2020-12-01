@@ -4,7 +4,7 @@
         <name>StorageFacility</name>
     </assembly>
     <members>
-        <member name="M:Zintom.StorageFacility.Helpers.GetValue``2(System.Collections.Generic.IReadOnlyDictionary{``0,``1},``0,``1)">
+        <member name="M:Zintom.StorageFacility.Helpers.GetValue``2(System.Collections.Generic.IDictionary{``0,``1},``0,``1)">
             <summary>
             Retreives a <typeparamref name="TValue"/> from the dictionary with the given <paramref name="key"/>.
             </summary>
@@ -12,6 +12,9 @@
             <param name="key">The key for the value to retrieve.</param>
             <param name="defaultValue">The value to return if the key does not exist.</param>
             <returns>The <typeparamref name="TValue"/> for the given <paramref name="key"/>, or <paramref name="defaultValue"/> if it does not exist.</returns>
+        </member>
+        <member name="M:Zintom.StorageFacility.Helpers.GetValue``2(System.Collections.Generic.IReadOnlyDictionary{``0,``1},``0,``1)">
+            <inheritdoc cref="M:Zintom.StorageFacility.Helpers.GetValue``2(System.Collections.Generic.IDictionary{``0,``1},``0,``1)"/>
         </member>
         <member name="M:Zintom.StorageFacility.Helpers.AddOrReplace``2(System.Collections.Generic.Dictionary{``0,``1},``0,``1)">
             <summary>
