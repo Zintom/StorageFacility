@@ -7,8 +7,27 @@ using System.Text;
 
 namespace Zintom.StorageFacility
 {
-    internal static class Helpers
+    public static class Helpers
     {
+
+        /// <summary>
+        /// Retreives a <typeparamref name="TValue"/> from the dictionary with the given <paramref name="key"/>.
+        /// </summary>
+        /// <param name="dictionary">The dictionary to search.</param>
+        /// <param name="key">The key for the value to retrieve.</param>
+        /// <param name="defaultValue">The value to return if the key does not exist.</param>
+        /// <returns>The <typeparamref name="TValue"/> for the given <paramref name="key"/>, or <paramref name="defaultValue"/> if it does not exist.</returns>
+        public static TValue? GetValue<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key, TValue? defaultValue) where TKey : notnull
+        {
+            if (dictionary.ContainsKey(key))
+            {
+                return dictionary[key];
+            }
+            else
+            {
+                return defaultValue;
+            }
+        }
 
         /// <summary>
         /// <inheritdoc cref="Dictionary{TKey, TValue}.Add(TKey, TValue)"/>
@@ -109,7 +128,7 @@ namespace Zintom.StorageFacility
         /// </summary>
         /// <param name="sequence">The sequence to test.</param>
         /// <returns>If the first sequence exactly matches the second, returns <see langword="true"/>, otherwise <see langword="false"/>.</returns>
-        public static bool MatchesSequence<T>(this Span<T> @this, Span<T> sequence) where T : IRepresent<T>
+        internal static bool MatchesSequence<T>(this Span<T> @this, Span<T> sequence) where T : IRepresent<T>
         {
             if (@this.Length != sequence.Length) return false;
 
@@ -128,7 +147,7 @@ namespace Zintom.StorageFacility
         /// <param name="recurringSequence">The template recurring sequence.</param>
         /// <param name="sequenceToMatch">The sequence to test.</param>
         /// <returns>If the given <paramref name="sequenceToMatch"/> exactly follows the given <paramref name="recurringSequence"/>, returns <see langword="true"/>, otherwise <see langword="false"/>.</returns>
-        public static bool FollowsRecurringSequence<T>(this Span<T> sequenceToMatch, Span<T> recurringSequence) where T : IRepresent<T>
+        internal static bool FollowsRecurringSequence<T>(this Span<T> sequenceToMatch, Span<T> recurringSequence) where T : IRepresent<T>
         {
             for (int i = 0; i < sequenceToMatch.Length; i++)
             {
@@ -144,7 +163,7 @@ namespace Zintom.StorageFacility
         /// <typeparam name="TTargetType">The <see cref="Type"/> that the array items are to be converted to.</typeparam>
         /// <param name="sourceArray"></param>
         /// <returns>A new <typeparamref name="TTargetType"/> array.</returns>
-        public static TTargetType[] ChangeElementType<TTargetType>(this object[] sourceArray)
+        internal static TTargetType[] ChangeElementType<TTargetType>(this object[] sourceArray)
         {
             TTargetType[] outputArray = new TTargetType[sourceArray.Length];
 
