@@ -27,6 +27,12 @@ Attempts to mimic the functionality and syntax of Androids SharedPreferences.</D
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Documentation\**" />
+    <EmbeddedResource Remove="Documentation\**" />
+    <None Remove="Documentation\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\..\LICENSE">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
